@@ -1,5 +1,0 @@
-[requires]
-xtl/0.6.5@forwardmeasure/stable
-
-[generators]
-cmake

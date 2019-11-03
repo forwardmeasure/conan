@@ -1,6 +1,7 @@
 import sys
 import os
 import json
+import re
 
 from conans import ConanFile
 from conans.tools import load
@@ -21,3 +22,19 @@ class ConfigurableConanFile(ConanFile):
         exports = ["config.ini"]
 
         return (name, version, dependencies, exports)
+    
+    def parseConanPackageSpec(spec):
+        match = re.search(r'([\w.-]+)/([\w.-]+)@([\w.-]+)/([\w.-]+)', spec)
+        if match:
+            all = match.group()
+            package = match.group(1)
+            version = match.group(2)
+            user = match.group(3)
+            channel = match.group(4)
+        else:
+            print ("Unable to match")
+    
+        return (package, version, user, channel);
+    
+    def buildConanPackageSpec(package, version, user, channel):
+        return package + "/" + version + "@" + user + "/" + channel

@@ -1,5 +1,0 @@
---- src/test/cpp/helpers/transcodertestcase.cpp
-+++ stc/test/cpp/helpers/transcodertestcase.cpp
-@@ -334 +334 @@
--            logchar unsupported[] = { 0x1F, 0x7F, 0x80, 0x81, 0x00 };
-+            logchar unsupported[] = { 0x1F, 0x7F, static_cast<logchar>(0x80), static_cast<logchar>(0x81), 0x00 };

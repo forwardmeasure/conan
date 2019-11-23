@@ -1,0 +1,10 @@
+prefix=@prefix@
+execprefix=@prefix@
+includedir=${prefix}/include
+libdir=${prefix}/lib
+
+Name: tensorflow
+Description: Tensorflow C/C++ Library
+Version: @version@
+Libs: -L${libdir} -ltensorflow -ltensorflow_cc -lcc_ops -lclient_session -lframework_internal_impl -lfile_utils -ltransform_utils  -Wl,-rpath,"${libdir}"
+Cflags: -I${includedir}

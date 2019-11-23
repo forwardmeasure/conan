@@ -3,9 +3,8 @@ This repo contains various Conan (http://conan.io) recipes that I have had to cr
 
 Furthermore, I am quite possibly not an expert in Conan or Python, and fully understand that these artefacts are less than perfect. I'd welcome updates and changes that will make these artefacts better.
 
-Cheers!
-
+Cheers!\
 Prashanth Nandavanam
 
-http://forwardmeasure.com
+http://forwardmeasure.com\
 http://paschabrunello.com

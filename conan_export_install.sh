@@ -17,7 +17,6 @@ myName=$(basename $0)
 # We custom export a number of recipes, as there do not exist common ones for them
 #################################################################################
 LIBS_TO_EXPORT="abseil protobuf opencv grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome"
-LIBS_TO_EXPORT="tensorflow"
 for i in ${LIBS_TO_EXPORT}
 do
 	dir="${SCRIPTS_DIR}/recipes/conan-${i}"

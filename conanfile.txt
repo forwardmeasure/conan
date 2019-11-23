@@ -1,5 +1,27 @@
 [requires]
+	abseil/20190808@forwardmeasure/stable
+	asio/1.13.0@bincrafters/stable
+	bzip2/1.0.8@conan/stable
+	zlib/1.2.11@conan/stable
+	cctz/2.3@bincrafters/stable
+	boost/1.69.0@conan/stable
+	c-ares/1.15.0@conan/stable
+	OpenSSL/1.1.1c@conan/stable
+	Catch2/2.10.2@catchorg/stable
+	opencv/4.1.1@forwardmeasure/stable
+	xtl/0.6.8@forwardmeasure/stable
+	xframe/0.2.0@forwardmeasure/stable
+	xtensor/0.20.10@forwardmeasure/stable
+	xtensor-io/0.8.0@forwardmeasure/stable
+	cpprestsdk/2.10.14@forwardmeasure/stable
+	websocketpp/0.8.1@forwardmeasure/stable
+	gtest/1.8.1@bincrafters/stable
+	fmt/6.0.0@bincrafters/stable
+	outcome/master@forwardmeasure/stable
+	protobuf/3.8.0@forwardmeasure/stable
+	grpc/1.19.1@forwardmeasure/stable
 	tensorflow/2.0.0@forwardmeasure/stable
+	ONNX/1.6.0@forwardmeasure/stable
 
 [generators]
     cmake

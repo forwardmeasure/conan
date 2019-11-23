@@ -2,13 +2,10 @@ import os
 import shutil
 import sys
 import contextlib
-import errno
 from pathlib import Path
-import logging
 import fnmatch
 import functools
 import itertools
-from shutil import Error, copystat
 
 from distutils.file_util import copy_file
 from conans import ConanFile, tools
@@ -49,10 +46,12 @@ class TensorFlowConan(ConanFile):
     #
     ################################################################################################################
     def _find_grpc_src_dir(self, top_dir):
+        # print("_find_grpc_src_dir(): top_dir = %s" % (top_dir))
         for (path, _, _) in os.walk(top_dir):
             base_name = os.path.basename(path)
             dir_name = os.path.dirname(path)
             inner_dir_name = os.path.basename(dir_name)
+            print("_find_grpc_src_dir(): base_name = %s, dir_name = %s, inner_dir_name = %s" % (base_name, dir_name, inner_dir_name))
 
             if base_name == "src" and inner_dir_name == "grpc":
                 inner_inner_dirname = os.path.basename(
@@ -84,9 +83,9 @@ class TensorFlowConan(ConanFile):
         commit id: Github keeps the commit ID of each PR that is approved, and you can pull specific commig IDs (standard git practice)
         You can check the checksums thus: shasum -a 1 grpc-1.25.0.zip* && shasum -a 256 grpc-1.25.0.zip
         '''
-        logging.debug("Fixing gRPC version...")
+        print("Fixing gRPC version...")
         bazel_workspace_path = os.path.realpath("tensorflow/workspace.bzl")
-        logging.debug("Bazel workspace path = %s", (bazel_workspace_path))
+        print("Bazel workspace path = %s" % (bazel_workspace_path))
 
         # gRPC 1.25 github sha256 hash
         tools.replace_in_file(
@@ -129,9 +128,9 @@ class TensorFlowConan(ConanFile):
         commit id: Github keeps the commit ID of each PR that is approved, and you can pull specific commit IDs.
         The version of gRPC can be found in the file: gRPC.podspec under the extracted source.
         '''
-        logging.debug("Fixing protobuf version...")
+        print("Fixing protobuf version...")
         bazel_workspace_path = os.path.realpath("tensorflow/workspace.bzl")
-        logging.debug("Bazel workspace path = %s", (bazel_workspace_path))
+        print("Bazel workspace path = %s" % (bazel_workspace_path))
 
         # Protobuf 3.10.1 github sha256 hash
         tools.replace_in_file(
@@ -165,29 +164,25 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
-    def _patch_grpc(self, _bazel_cache_dir):
+    def _patch_grpc(self, bazel_cache_dir):
         # Determine where to find the grpc sources
-        grpc_source_dir = self._find_grpc_src_dir(_bazel_cache_dir)
+        grpc_source_dir = self._find_grpc_src_dir(bazel_cache_dir)
 
         # Copy patch file
         source_folder_path = os.path.dirname(
             os.path.abspath(self._source_subfolder))
-        logging.debug("Source folder = %s", (source_folder_path))
+        # print("Source folder = %s" % (source_folder_path))
         grpc_patch_file_path = os.path.realpath(
             os.path.dirname(source_folder_path) +
             os.sep + self._grpc_patch_file
         )
-        logging.debug("Copying %s to %s" %
-                      (grpc_patch_file_path, grpc_source_dir))
+        # print("Copying %s to %s" % (grpc_patch_file_path, grpc_source_dir))
         shutil.copy(grpc_patch_file_path, grpc_source_dir)
         grpc_patch_file_path = os.path.realpath(
             grpc_source_dir + os.sep + self._grpc_patch_file
         )
 
-        logging.debug(
-            "Patching grpc source %s using %s" % (
-                grpc_source_dir, grpc_patch_file_path)
-        )
+        # print("Patching grpc source %s using %s" % (grpc_source_dir, grpc_patch_file_path))
         tools.patch(base_path=grpc_source_dir, patch_file=grpc_patch_file_path)
 
         return
@@ -201,7 +196,6 @@ class TensorFlowConan(ConanFile):
 
             % (self._bazel_cache_dir, bazel_config_flags, target)
         )
-        self.run("bazel shutdown")
 
     ################################################################################################################
     #
@@ -267,7 +261,7 @@ class TensorFlowConan(ConanFile):
         path = src_dir or "."
         path_patterns = patterns or ["*.so", "*.dylib"]
 
-        for root_dir, dir_names, file_names in os.walk(path):
+        for root_dir, _, file_names in os.walk(path):
             filter_partial = functools.partial(fnmatch.filter, file_names)
 
             for file_name in itertools.chain(*map(filter_partial, path_patterns)):
@@ -346,8 +340,7 @@ class TensorFlowConan(ConanFile):
         )
         extracted_dir = self.name + "-" + self.version
         os.rename(extracted_dir, self._source_subfolder)
-        print("Downloaded archive from %s to %s",
-              (self.homepage, extracted_dir))
+        print("Downloaded archive from %s to %s" % (self.homepage, extracted_dir))
 
     ################################################################################################################
     #
@@ -396,14 +389,24 @@ class TensorFlowConan(ConanFile):
                     "python configure.py" if tools.os_info.is_windows else "./configure"
                 )
                 self.run("bazel shutdown")
-                # SSE4.1 SSE4.2 AVX AVX2 FMA
-                opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
-                safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
-                bazel_config_flags = {
-                    "MacOs": opt_flags if self.options.optimisedBuild == True else safe_flags,
-                    "Linux": opt_flags if self.options.optimisedBuild == True else safe_flags,
-                    "Windows": opt_flags if self.options.optimisedBuild == True else safe_flags
-                }.get(str(self.settings.os))
+
+                bazel_config_flags = ""
+                os_name = str(self.settings.os).lower()
+                if os_name == "macos":
+                    opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=387 --copt=-msse4.1 --copt=-msse4.2"
+                    osx_safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=387"
+
+                    bazel_config_flags = osx_safe_flags
+                elif os_name == "linux":
+                    opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
+                    safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
+
+                    bazel_config_flags = opt_flags if self.options.optimisedBuild == True else safe_flags
+                elif os_name == "windows":
+                    opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
+                    safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
+
+                    bazel_config_flags = opt_flags if self.options.optimisedBuild == True else safe_flags
 
                 if self.options.cuda == True:
                     bazel_config_flags += "--config=cuda"
@@ -414,9 +417,10 @@ class TensorFlowConan(ConanFile):
                         bazel_config_flags, "//tensorflow:libtensorflow_cc.so"
                     )
                 except Exception as inst:
-                    logging.debug(
+                    print(
                         "Exception caught building libtensorflow_cc, attempting to PATCH"
                     )
+                    print(inst)
 
                     if self._grpc_version < Version("1.22.0"):
                         # Patch gRPC before proceeding
@@ -579,8 +583,8 @@ class TensorFlowConan(ConanFile):
             # Fix up pkgconfig file: this takes the tensorflow.pc.in file and generates tensorflow.pc
             pkg_config_dir = os.path.join(lib_dir, "pkgconfig")
             if not os.path.exists(pkg_config_dir):
-                logging.debug(
-                    "Pkgconfir directory %s does not exist, creating", pkg_config_dir
+                print(
+                    "Pkgconfir directory %s does not exist, creating" % (pkg_config_dir)
                 )
                 os.makedirs(pkg_config_dir)
 

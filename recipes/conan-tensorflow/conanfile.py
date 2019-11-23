@@ -7,7 +7,6 @@ import fnmatch
 import functools
 import itertools
 
-from distutils.file_util import copy_file
 from conans import ConanFile, tools
 from conans.model.version import Version
 
@@ -270,7 +269,6 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
-
     def _copy_tf_libs(self, src_dir, dest_dir, search_extns=None):
         try:
             if search_extns is None:
@@ -393,8 +391,8 @@ class TensorFlowConan(ConanFile):
                 bazel_config_flags = ""
                 os_name = str(self.settings.os).lower()
                 if os_name == "macos":
-                    opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=387 --copt=-msse4.1 --copt=-msse4.2"
-                    osx_safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=387"
+                    opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.1 --copt=-msse4.2"
+                    osx_safe_flags = "-c opt --copt=-march=native"
 
                     bazel_config_flags = osx_safe_flags
                 elif os_name == "linux":

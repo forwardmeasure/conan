@@ -6,5 +6,6 @@ Furthermore, I am quite possibly not an expert in Conan or Python, and fully und
 Cheers!\
 Prashanth Nandavanam
 
-http://forwardmeasure.com\
+http://forwardmeasure.com
+
 http://paschabrunello.com

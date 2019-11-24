@@ -258,7 +258,7 @@ class TensorFlowConan(ConanFile):
         :param patterns: Patterns of files to search for. Defaults to ["*"]. Example: ["*.json", "*.xml"]
         """
         path = src_dir or "."
-        path_patterns = patterns or ["*.so", "*.dylib"]
+        path_patterns = patterns or ["*.so"]
 
         for root_dir, _, file_names in os.walk(path):
             filter_partial = functools.partial(fnmatch.filter, file_names)
@@ -272,7 +272,7 @@ class TensorFlowConan(ConanFile):
     def _copy_tf_libs(self, src_dir, dest_dir, search_extns=None):
         try:
             if search_extns is None:
-                search_extns = ["*.so", "*.dylib"]
+                search_extns = ["*.so"]
 
             print("_copy_tf_libs(): copying file matching patterns %s from %s to %s" % (
                 str(search_extns), src_dir, dest_dir))
@@ -523,7 +523,7 @@ class TensorFlowConan(ConanFile):
                 os.makedirs(lib_dir)
 
             self._copy_tf_libs(src_dir=os.path.abspath(bazel_bin_directory),
-                               dest_dir=lib_dir, search_extns=["*.so", "*dylib", "*.params"])
+                               dest_dir=lib_dir, search_extns=["*.so", "*.params"])
 
             print("Copying absl includes")
             shutil.copytree(

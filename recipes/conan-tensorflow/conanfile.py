@@ -279,6 +279,13 @@ class TensorFlowConan(ConanFile):
             for f in self._find_files(src_dir=src_dir, patterns=search_extns):
                 print("Copying %s to %s" % (f, dest_dir))
                 self._copy_file(f, dest_dir, verbose=True)
+
+            # If we are on Mac, copy inidvidual files, since wildcarding on *.dylib ended up in an infinite loop
+            os_name = str(self.settings.os).lower()
+            if os_name == "macos":
+                 tf_framework_dylib = os.path.join(src_dir, "tensorflow", "libtensorflow_framework.1.dylib") if self.version < Version("2.0.0") else os.path.join(src_dir, "tensorflow", "libtensorflow_framework.2.dylib")
+                 print("Copying %s to %s" % (tf_framework_dylib, dest_dir))
+                 self._copy_file(tf_framework_dylib, dest_dir, verbose=True)
         except Exception as inst:
             print("Exception caught copying tf libs")
             print(inst)
@@ -332,6 +339,7 @@ class TensorFlowConan(ConanFile):
     #
     ################################################################################################################
     def source(self):
+        # 1.15 -> sha256 = "a5d49c00a175a61da7431a9b289747d62339be9cf37600330ad63b611f7f5dc9"
         sha256 = "49b5f0495cd681cbcb5296a4476853d4aea19a43bdd9f179c928a977308a0617"
         tools.get(
             "{0}/archive/v{1}.tar.gz".format(self.homepage, self.version), sha256=sha256

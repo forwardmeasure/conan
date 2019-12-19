@@ -1,4 +1,9 @@
 [requires]
+	json4moderncpp/3.7.3@forwardmeasure/stable
+	expat/2.2.6@forwardmeasure/stable
+	apache-apr/1.7.0@forwardmeasure/stable
+	apache-apr-util/1.6.1@forwardmeasure/stable
+	apache-log4cxx/master@forwardmeasure/stable
 	abseil/20190808@forwardmeasure/stable
 	asio/1.13.0@bincrafters/stable
 	bzip2/1.0.8@conan/stable
@@ -22,6 +27,7 @@
 	grpc/1.19.1@forwardmeasure/stable
 	tensorflow/2.0.0@forwardmeasure/stable
 	ONNX/1.6.0@forwardmeasure/stable
+	Poco/1.9.4@pocoproject/stable
 
 [generators]
     cmake

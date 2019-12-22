@@ -28,7 +28,12 @@
 	tensorflow/2.0.0@forwardmeasure/stable
 	ONNX/1.6.0@forwardmeasure/stable
 	Poco/1.9.4@pocoproject/stable
-    libtorch/1.3.1@forwardmeasure/stable
+#   libtorch/1.3.1@forwardmeasure/stable
+    openblas/0.3.7@forwardmeasure/stable
+    lapack/3.7.1@forwardmeasure/stable
+    jemalloc/5.2.1@forwardmeasure/stable
+    mxnet/1.5.1@forwardmeasure/stable
+
 
 [generators]
     cmake

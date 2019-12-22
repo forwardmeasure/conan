@@ -133,9 +133,9 @@ class LibtorchConan(ConanFile):
     def source(self):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
-            "git clone https://github.com/pytorch/pytorch.git {} && cd {} && "
+            "git clone {}.git {} && cd {} && "
             "git checkout v{} && git submodule update --init --recursive"
-        ).format(self._source_subfolder, self._source_subfolder, self.version)
+        ).format(self.url, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
 
     def build_requirements(self):

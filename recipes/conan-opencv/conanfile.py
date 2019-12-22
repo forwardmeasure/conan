@@ -170,11 +170,11 @@ class OpenCVConan(ConanFile):
             self.requires.add('gstreamer/1.16.0@bincrafters/stable')
             self.requires.add('gst-plugins-base/1.16.0@bincrafters/stable')
         if self.options.openblas:
-            self.requires.add('openblas/0.3.5@conan/stable')
+            self.requires.add('openblas/0.3.7@forwardmeasure/stable')
         if self.options.ffmpeg:
             self.requires.add('ffmpeg/4.2@bincrafters/stable')
         if self.options.lapack:
-            self.requires.add('lapack/3.7.1@conan/stable')
+            self.requires.add('lapack/3.7.1@forwardmeasure/stable')
         if self.options.contrib:
             if self.options.freetype:
                 self.requires.add('freetype/2.10.0@bincrafters/stable')

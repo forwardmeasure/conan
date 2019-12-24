@@ -33,7 +33,7 @@ class ConanFileDefault(ConanFileBase):
 
     def requirements(self):
         if self.options.with_zlib:
-            self.requires("zlib/1.2.11")
+            self.requires("zlib/1.2.11@conan/stable")
 
     def _configure_cmake(self):
         cmake = CMake(self, set_cmake_flags=True)

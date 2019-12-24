@@ -13,7 +13,6 @@
 	c-ares/1.15.0@conan/stable
 	OpenSSL/1.1.1c@conan/stable
 	Catch2/2.10.2@catchorg/stable
-	opencv/4.1.1@forwardmeasure/stable
 	xtl/0.6.8@forwardmeasure/stable
 	xframe/0.2.0@forwardmeasure/stable
 	xtensor/0.20.10@forwardmeasure/stable
@@ -29,11 +28,12 @@
 	ONNX/1.6.0@forwardmeasure/stable
 	Poco/1.9.4@pocoproject/stable
 #   libtorch/1.3.1@forwardmeasure/stable
+    openexr/2.4.0@forwardmeasure/stable
+    opencv/4.2.0@forwardmeasure/stable
     openblas/0.3.7@forwardmeasure/stable
     lapack/3.7.1@forwardmeasure/stable
     jemalloc/5.2.1@forwardmeasure/stable
     mxnet/1.5.1@forwardmeasure/stable
-
 
 [generators]
     cmake
@@ -48,3 +48,12 @@
 	*:shared=True
 	*:fPIC=True
     libcurl:with_openssl=True
+ 	mxnet:use_opencv=True
+ 	mxnet:use_mkldnn=True
+ 	mxnet:use_openmp=True
+	mxnet:use_lapack=True
+	mxnet:use_jemalloc=False
+    openblas:BUILD_WITHOUT_LAPACK=False
+    openblas:USE_OPENMP=True
+    openblas:USE_THREAD=False
+    openblas:USE_LOCKING=True

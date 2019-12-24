@@ -28,13 +28,13 @@ class TensorFlowConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
         "cuda": [True, False],
-        "optimisedBuild": [True, False]
+        "optimisedBuild": [True, False],
     }
     default_options = {
         "shared": True,
         "fPIC": True,
         "cuda": False,
-        "optimisedBuild": True
+        "optimisedBuild": True,
     }
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
@@ -50,11 +50,13 @@ class TensorFlowConan(ConanFile):
             base_name = os.path.basename(path)
             dir_name = os.path.dirname(path)
             inner_dir_name = os.path.basename(dir_name)
-            print("_find_grpc_src_dir(): base_name = %s, dir_name = %s, inner_dir_name = %s" % (base_name, dir_name, inner_dir_name))
+            print(
+                "_find_grpc_src_dir(): base_name = %s, dir_name = %s, inner_dir_name = %s"
+                % (base_name, dir_name, inner_dir_name)
+            )
 
             if base_name == "src" and inner_dir_name == "grpc":
-                inner_inner_dirname = os.path.basename(
-                    os.path.dirname(dir_name))
+                inner_inner_dirname = os.path.basename(os.path.dirname(dir_name))
                 if inner_inner_dirname == "external":
                     return os.path.dirname(path)
         return ""
@@ -74,14 +76,14 @@ class TensorFlowConan(ConanFile):
     #
     ################################################################################################################
     def _fix_grpc_version(self):
-        '''
+        """
         TF is usually bundled with really old versions of protobuf and gRPC. So, we cheekily
         upgarde them in place in the workspace the bazel before the build kicks off. We need
         to replace two things: the sha256 signature and the commit id of the particular version we want to use.
         sha256: Unfortunately at this point, I don't know how to get this value any other way than to install it using Conan
         commit id: Github keeps the commit ID of each PR that is approved, and you can pull specific commig IDs (standard git practice)
         You can check the checksums thus: shasum -a 1 grpc-1.25.0.zip* && shasum -a 256 grpc-1.25.0.zip
-        '''
+        """
         print("Fixing gRPC version...")
         bazel_workspace_path = os.path.realpath("tensorflow/workspace.bzl")
         print("Bazel workspace path = %s" % (bazel_workspace_path))
@@ -106,7 +108,8 @@ class TensorFlowConan(ConanFile):
             bazel_workspace_path,
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grpc/grpc/archive/4566c2a29ebec0835643b972eb99f4306c4234a3.tar.gz",
             "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grpc/grpc/archive/v1.25.0.tar.gz",
-            strict=True,)
+            strict=True,
+        )
         # gRPC 1.25 github sha1 hash
         tools.replace_in_file(
             bazel_workspace_path,
@@ -119,14 +122,14 @@ class TensorFlowConan(ConanFile):
     #
     ################################################################################################################
     def _fix_protobuf_version(self):
-        '''
+        """
         TF is usually bundled with really old versions of protobuf and gRPC. So, we cheekily
         upgarde them in place in the workspace the bazel before the build kicks off. We need
         to replace two things: the sha256 signature and the commit id of the particular version we want to use.
         sha256: Unfortunately at this point, I don't know how to get this value any other way than to install it using Conan
         commit id: Github keeps the commit ID of each PR that is approved, and you can pull specific commit IDs.
         The version of gRPC can be found in the file: gRPC.podspec under the extracted source.
-        '''
+        """
         print("Fixing protobuf version...")
         bazel_workspace_path = os.path.realpath("tensorflow/workspace.bzl")
         print("Bazel workspace path = %s" % (bazel_workspace_path))
@@ -168,12 +171,10 @@ class TensorFlowConan(ConanFile):
         grpc_source_dir = self._find_grpc_src_dir(bazel_cache_dir)
 
         # Copy patch file
-        source_folder_path = os.path.dirname(
-            os.path.abspath(self._source_subfolder))
+        source_folder_path = os.path.dirname(os.path.abspath(self._source_subfolder))
         # print("Source folder = %s" % (source_folder_path))
         grpc_patch_file_path = os.path.realpath(
-            os.path.dirname(source_folder_path) +
-            os.sep + self._grpc_patch_file
+            os.path.dirname(source_folder_path) + os.sep + self._grpc_patch_file
         )
         # print("Copying %s to %s" % (grpc_patch_file_path, grpc_source_dir))
         shutil.copy(grpc_patch_file_path, grpc_source_dir)
@@ -192,7 +193,6 @@ class TensorFlowConan(ConanFile):
     def _build_bazel_target(self, bazel_config_flags, target):
         self.run(
             "bazel --output_user_root=%s --host_jvm_args=-Xms512M --host_jvm_args=-Xmx8192M build --jobs 12 --incompatible_no_support_tools_in_action_inputs=false --nodiscard_analysis_cache --keep_state_after_build --track_incremental_state --verbose_failures %s %s"
-
             % (self._bazel_cache_dir, bazel_config_flags, target)
         )
 
@@ -229,26 +229,26 @@ class TensorFlowConan(ConanFile):
 
             # Step down one level of indirection
             linkto = os.readlink(src_file)
-            linkto_dest = os.path.join(os.path.dirname(
-                src_file), os.path.basename(linkto))
+            linkto_dest = os.path.join(
+                os.path.dirname(src_file), os.path.basename(linkto)
+            )
 
             print("%s links to %s (abs %s)" % (src_file, linkto, linkto_dest))
 
             # Recurse and get the link target
             dest = self._copy_file(linkto_dest, dest_dir, verbose)
-            os.symlink(dest, os.path.join(
-                dest_dir, os.path.basename(src_file)))
+            os.symlink(dest, os.path.join(dest_dir, os.path.basename(src_file)))
 
             return dest_file
         else:
             shutil.copy(src_file, dest_dir)
             print("Returning %s" % (dest_file))
-            return(dest_file)
+            return dest_file
 
     ################################################################################################################
     #
     ################################################################################################################
-    def _find_files(self, src_dir: str,  patterns: [str] = None) -> [str]:
+    def _find_files(self, src_dir: str, patterns: [str] = None) -> [str]:
         """
         Returns a generator yielding files matching the given patterns
         :type src_dir: str
@@ -274,8 +274,10 @@ class TensorFlowConan(ConanFile):
             if search_extns is None:
                 search_extns = ["*.so"]
 
-            print("_copy_tf_libs(): copying file matching patterns %s from %s to %s" % (
-                str(search_extns), src_dir, dest_dir))
+            print(
+                "_copy_tf_libs(): copying file matching patterns %s from %s to %s"
+                % (str(search_extns), src_dir, dest_dir)
+            )
             for f in self._find_files(src_dir=src_dir, patterns=search_extns):
                 print("Copying %s to %s" % (f, dest_dir))
                 self._copy_file(f, dest_dir, verbose=True)
@@ -283,9 +285,17 @@ class TensorFlowConan(ConanFile):
             # If we are on Mac, copy inidvidual files, since wildcarding on *.dylib ended up in an infinite loop
             os_name = str(self.settings.os).lower()
             if os_name == "macos":
-                 tf_framework_dylib = os.path.join(src_dir, "tensorflow", "libtensorflow_framework.1.dylib") if self.version < Version("2.0.0") else os.path.join(src_dir, "tensorflow", "libtensorflow_framework.2.dylib")
-                 print("Copying %s to %s" % (tf_framework_dylib, dest_dir))
-                 self._copy_file(tf_framework_dylib, dest_dir, verbose=True)
+                tf_framework_dylib = (
+                    os.path.join(
+                        src_dir, "tensorflow", "libtensorflow_framework.1.dylib"
+                    )
+                    if self.version < Version("2.0.0")
+                    else os.path.join(
+                        src_dir, "tensorflow", "libtensorflow_framework.2.dylib"
+                    )
+                )
+                print("Copying %s to %s" % (tf_framework_dylib, dest_dir))
+                self._copy_file(tf_framework_dylib, dest_dir, verbose=True)
         except Exception as inst:
             print("Exception caught copying tf libs")
             print(inst)
@@ -297,8 +307,7 @@ class TensorFlowConan(ConanFile):
         self.copy(
             pattern="tensorflow.pc.in", dst="tensorflow.pc", src=self._source_subfolder
         )
-        tools.replace_in_file("tensorflow.pc", "@version@",
-                              self.version, strict=True)
+        tools.replace_in_file("tensorflow.pc", "@version@", self.version, strict=True)
         tools.replace_in_file(
             "tensorflow.pc", "@prefix@", self.package_folder, strict=True
         )
@@ -407,12 +416,16 @@ class TensorFlowConan(ConanFile):
                     opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
                     safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
 
-                    bazel_config_flags = opt_flags if self.options.optimisedBuild == True else safe_flags
+                    bazel_config_flags = (
+                        opt_flags if self.options.optimisedBuild == True else safe_flags
+                    )
                 elif os_name == "windows":
                     opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
                     safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
 
-                    bazel_config_flags = opt_flags if self.options.optimisedBuild == True else safe_flags
+                    bazel_config_flags = (
+                        opt_flags if self.options.optimisedBuild == True else safe_flags
+                    )
 
                 if self.options.cuda == True:
                     bazel_config_flags += "--config=cuda"
@@ -448,8 +461,7 @@ class TensorFlowConan(ConanFile):
                     bazel_config_flags, "//tensorflow:libtensorflow.so"
                 )
 
-                self._build_bazel_target(
-                    bazel_config_flags, "//tensorflow/c:c_api")
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/c:c_api")
 
                 self._build_bazel_target(
                     bazel_config_flags, "//tensorflow:libtensorflow_framework.so"
@@ -468,8 +480,7 @@ class TensorFlowConan(ConanFile):
                 self._build_bazel_target(
                     bazel_config_flags, "//tensorflow/core:tensorflow"
                 )
-                self._build_bazel_target(
-                    bazel_config_flags, "//tensorflow/cc:cc_ops")
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/cc:cc_ops")
 
                 self._build_bazel_target(
                     bazel_config_flags, "//tensorflow/cc:client_session"
@@ -494,8 +505,7 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     def package(self):
         try:
-            self.copy(pattern="LICENSE", dst="licenses",
-                      src=self._source_subfolder)
+            self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
 
             bazel_genfiles_directory = self._find_directory_under_directory(
                 self._source_subfolder, "bazel-genfiles"
@@ -510,33 +520,37 @@ class TensorFlowConan(ConanFile):
             )[0]
             print(
                 "Absolute path of BAZEL-BIN directory: %s"
-                % os.path.abspath(bazel_bin_directory))
+                % os.path.abspath(bazel_bin_directory)
+            )
 
             source_folder_path = os.path.realpath(self._source_subfolder)
-            print("Absolute path of source_subfolder directory: %s" %
-                  (source_folder_path))
+            print(
+                "Absolute path of source_subfolder directory: %s" % (source_folder_path)
+            )
 
-            inc_dir = os.path.realpath(
-                os.path.join(self.package_folder, "include"))
+            inc_dir = os.path.realpath(os.path.join(self.package_folder, "include"))
             print("Real path of include directory: %s" % (inc_dir))
 
             # Copy the various TF Libs to their respective destiations
             lib_dir = os.path.abspath(os.path.join(self.package_folder, "lib"))
             print("Real path of lib directory: %s" % (lib_dir))
 
-            print("PACKAGE: Copying directories %s to %s" %
-                  (bazel_bin_directory, lib_dir))
+            print(
+                "PACKAGE: Copying directories %s to %s" % (bazel_bin_directory, lib_dir)
+            )
             if not os.path.exists(lib_dir):
                 print("Library directory %s does not exist, creating" % (lib_dir))
                 os.makedirs(lib_dir)
 
-            self._copy_tf_libs(src_dir=os.path.abspath(bazel_bin_directory),
-                               dest_dir=lib_dir, search_extns=["*.so", "*.params"])
+            self._copy_tf_libs(
+                src_dir=os.path.abspath(bazel_bin_directory),
+                dest_dir=lib_dir,
+                search_extns=["*.so", "*.params"],
+            )
 
             print("Copying absl includes")
             shutil.copytree(
-                os.path.join(bazel_genfiles_directory,
-                             "tensorflow", "include", "absl"),
+                os.path.join(bazel_genfiles_directory, "tensorflow", "include", "absl"),
                 os.path.join(inc_dir, "absl"),
             )
 
@@ -557,9 +571,10 @@ class TensorFlowConan(ConanFile):
             )
 
             print("Copying TF includes")
-            shutil.copytree(os.path.join(
-                bazel_genfiles_directory, "tensorflow", "include", "tensorflow"
-            ),
+            shutil.copytree(
+                os.path.join(
+                    bazel_genfiles_directory, "tensorflow", "include", "tensorflow"
+                ),
                 os.path.join(inc_dir, "tensorflow"),
             )
 
@@ -573,8 +588,7 @@ class TensorFlowConan(ConanFile):
 
             print("Copying TF util includes")
             shutil.copytree(
-                os.path.join(bazel_genfiles_directory,
-                             "tensorflow", "include", "util"),
+                os.path.join(bazel_genfiles_directory, "tensorflow", "include", "util"),
                 os.path.join(inc_dir, "util"),
             )
 
@@ -600,14 +614,12 @@ class TensorFlowConan(ConanFile):
             )
 
             shutil.copyfile(
-                os.path.join(source_folder_path,
-                             "tensorflow.pc.in"), pkg_config_file
+                os.path.join(source_folder_path, "tensorflow.pc.in"), pkg_config_file
             )
             tools.replace_in_file(
                 pkg_config_file, "@version@", self.version, strict=True
             )
-            tools.replace_in_file(
-                pkg_config_file, "@prefix@", lib_dir, strict=True)
+            tools.replace_in_file(pkg_config_file, "@prefix@", lib_dir, strict=True)
         except Exception as inst:
             print("Exception caught packaging, fix error and re-run.")
             print(type(inst))  # the exception instance

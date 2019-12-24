@@ -1,131 +1,162 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-from conans import ConanFile, CMake, tools
-from glob import glob
 import os
+import shutil
+
+from conans import CMake, ConanFile, tools
 
 
-class openblasConan(ConanFile):
+class OpenblasConan(ConanFile):
     name = "openblas"
     version = "0.3.7"
-    url = "https://github.com/xianyi/OpenBLAS"
-    homepage = "http://www.openblas.net/"
-    description = "OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version."
-    license = "BSD 3-Clause"
-    exports_sources = ["CMakeLists.txt", "LICENSE"]
-    settings = "os", "arch", "compiler", "build_type"
+    license = "https://raw.githubusercontent.com/xianyi/OpenBLAS/develop/LICENSE"
+    author = "Darlan Cavalcante Moreira (darcamo@gmail.com)"
+    url = "https://github.com/darcamo/conan-openblas"
+    description = "OpenBLAS is an optimized BLAS library based on GotoBLAS2 1.13 BSD version"
+    settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False],
-               "USE_MASS": [True, False],
+               "DYNAMIC_ARCH": [True, False],
+               "DYNAMIC_OLDER": [True, False],
+               "BUILD_WITHOUT_LAPACK": [True, False],
+               "BUILD_WITHOUT_CBLAS": [True, False],
+               "BUILD_RELAPACK": [True, False],
+               "USE_THREAD": [True, False],
+               "USE_LOCKING": [True, False],
                "USE_OPENMP": [True, False],
-               "NO_LAPACKE": [True, False],
-               "NOFORTRAN": [True, False]}
-    default_options = "shared=True", "USE_MASS=False", "USE_OPENMP=False", "NO_LAPACKE=False", "NOFORTRAN=True"
+               }
+    default_options = {
+        "shared": True,
+        "DYNAMIC_ARCH": True,
+        "DYNAMIC_OLDER": False,
+        "BUILD_WITHOUT_CBLAS": False,
+        "BUILD_WITHOUT_LAPACK": False,
+        "BUILD_RELAPACK": False,
+        "USE_THREAD": False,
+        "USE_LOCKING": False,
+        "USE_OPENMP": True,
+    }
+    generators = "cmake"
+    # This will store the cmake object so that we can used in the build and in
+    # the package methods
+    cmake = None
 
-    def _get_make_arch(self):
-        return "32" if self.settings.arch == "x86" else "64"
+    # TODO: Check the USE_LOCKING option introduced in openblas 0.3.7. If might
+    # be good to add it to the recipe for the case when USE_THREAD is set to
+    # False
 
-    def _get_make_build_type_debug(self):
-        return "0" if self.settings.build_type == "Release" else "1"
+    def _get_configured_cmake(self):
+        cmake = CMake(self)
+        if not os.path.exists("build"):
+            os.mkdir("build")
+            shutil.move("conanbuildinfo.cmake", "build/")
 
-    @staticmethod
-    def _get_make_option_value(option):
-        return "1" if option else "0"
+        cmake.definitions["DYNAMIC_ARCH"] = self.options.DYNAMIC_ARCH
+        cmake.definitions["DYNAMIC_OLDER"] = self.options.DYNAMIC_OLDER
+        cmake.definitions["BUILD_RELAPACK"] = self.options.BUILD_RELAPACK
+        cmake.definitions["BUILD_WITHOUT_LAPACK"] = self.options.BUILD_WITHOUT_LAPACK
+        cmake.definitions["BUILD_WITHOUT_CBLAS"] = self.options.BUILD_WITHOUT_CBLAS
+        cmake.definitions["USE_THREAD"] = self.options.USE_THREAD
+        cmake.definitions["BUILD_SHARED_LIBS"] = self.options.shared
+        # Even when threads are not we enabled want locking such that we can
+        # call openblas from multiple threads ourselves
+        if not self.options.USE_THREAD:
+            cmake.definitions["USE_LOCKING"] = True
+
+        if self.settings.os == "Windows":
+            cmake.definitions["NO_LAPACK"] = True  # No fortran compiler
+
+        if self.settings.compiler == "Visual Studio":
+            cmake.definitions["MSVC_STATIC_CRT"] = "MT" in str(self.settings.compiler.runtime)
+
+        cmake.configure(source_folder="openblas", build_folder="build")
+        OpenblasConan.cmake = cmake
+        return OpenblasConan.cmake
 
     def build_requirements(self):
         if self.settings.os == "Windows":
+            self.build_requires("cmake_installer/3.11.3@conan/stable")
             self.build_requires("strawberryperl/5.26.0@conan/stable")
 
-    def configure(self):
-        if self.settings.compiler == "Visual Studio":
-            if not self.options.shared:
-                raise Exception("Static build not supported in Visual Studio: "
-                                "https://github.com/xianyi/OpenBLAS/blob/v0.3.5/CMakeLists.txt#L152")
+    def system_requirements_if_needed(self):
+        if tools.os_info.is_linux:
+            installer = tools.SystemPackageTool()
+            if tools.os_info.linux_distro == "arch":
+                installer.install("gcc-fortran")
+            else:
+                installer.install("gfortran")
 
-        if self.settings.os == "Windows":
-            if self.options.NOFORTRAN:
-                self.output.warn("NOFORTRAN option is disabled for Windows. Setting to false")
-                self.options.NOFORTRAN = False
+                # It seems that just gfortan is not enough in ubuntu. We need
+                # to install a libgfortan-X-dev package, where X must match gcc
+                # version.
+                if self.settings.get_safe("compiler") == "gcc":
+                    if self.settings.get_safe("compiler.version") == "8":
+                        installer.install("libgfortran-8-dev")
+                    elif self.settings.get_safe("compiler.version") == "7":
+                        installer.install("libgfortran-7-dev")
+                    elif self.settings.get_safe("compiler.version") == "9":
+                        installer.install("libgfortran-9-dev")
+
+        if tools.os_info.is_macos:
+            installer = tools.SystemPackageTool()
+            installer.install("gcc")
+
+    def configure(self):
+        # Openblas does not use C++
+        del self.settings.compiler.libcxx
 
     def source(self):
-        self.output.info("source()")
-        source_url = "https://sourceforge.net/projects/openblas"
-        file_name = ("{0} {1} version".format("OpenBLAS", self.version))
-        tools.get("{0}/files/v{1}/{2}.tar.gz".format(source_url, self.version, file_name))
-        os.rename(glob("xianyi-OpenBLAS-*")[0], "sources")
+        openblas_git = tools.Git(folder="openblas")
+        openblas_git.clone(url="https://github.com/xianyi/OpenBLAS.git",
+                           branch="v{0}".format(self.version))
 
-    @property
-    def _is_msvc(self):
-        return self.settings.compiler == "Visual Studio"
+        tools.replace_in_file(
+            "openblas/CMakeLists.txt", "project(OpenBLAS C ASM)",
+            '''project(OpenBLAS C ASM)
+include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+conan_basic_setup()
 
-    def _configure_cmake(self):
-        self.output.warn("Building with CMake: Some options won't make any effect")
-        cmake = CMake(self)
-        cmake.definitions["USE_MASS"] = self.options.USE_MASS
-        cmake.definitions["USE_OPENMP"] = self.options.USE_OPENMP
-        cmake.definitions["NO_LAPACKE"] = self.options.NO_LAPACKE
-        cmake.definitions["NOFORTRAN"] = self.options.NOFORTRAN
-        cmake.configure(source_dir="sources")
-        return cmake
-
-    def _build_cmake(self):
-        cmake = self._configure_cmake()
-        cmake.build()
-
-    def _build_make(self, args=None):
-        make_options = ["DEBUG=%s" % self._get_make_build_type_debug(),
-                        "NO_SHARED=%s" % self._get_make_option_value(not self.options.shared),
-                        "BINARY=%s" % self._get_make_arch(),
-                        "NO_LAPACKE=%s" % self._get_make_option_value(self.options.NO_LAPACKE),
-                        "USE_MASS=%s" % self._get_make_option_value(self.options.USE_MASS),
-                        "USE_OPENMP=%s" % self._get_make_option_value(self.options.USE_OPENMP),
-                        "NOFORTRAN=%s" % self._get_make_option_value(self.options.NOFORTRAN)]
-        # https://github.com/xianyi/OpenBLAS/wiki/How-to-build-OpenBLAS-for-Android
-        target = {"armv6": "ARMV6",
-                  "armv7": "ARMV7",
-                  "armv7hf": "ARMV7",
-                  "armv8": "ARMV8",
-                  "sparc": "SPARC"}.get(str(self.settings.arch))
-        if tools.cross_building(self.settings):
-            if "CC_FOR_BUILD" in os.environ:
-                hostcc = os.environ["CC_FOR_BUILD"]
-            else:
-                hostcc = tools.which("cc") or tools.which("gcc") or tools.which("clang")
-            make_options.append("HOSTCC=%s" % hostcc)
-        if target:
-            make_options.append("TARGET=%s" % target)
-        if "CC" in os.environ:
-            make_options.append("CC=%s" % os.environ["CC"])
-        if "AR" in os.environ:
-            make_options.append("AR=%s" % os.environ["AR"])
-        if args:
-            make_options.extend(args)
-        self.run("cd sources && make %s" % ' '.join(make_options), cwd=self.source_folder)
+# Verify if ccache exists, if yes, then use it to speedup the compilation
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE ccache)
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_LINK ccache)
+endif(CCACHE_FOUND)''')
 
     def build(self):
-        if self._is_msvc:
-            self._build_cmake()
-        else:
-            self._build_make()
+        # This will be set by the self._get_configured_cmake method
+        OpenblasConan.cmake = None
+
+        cmake = self._get_configured_cmake()
+        cmake.build()
 
     def package(self):
-        if not self._is_msvc:
-            self._build_make(args=['PREFIX=%s' % self.package_folder, 'install'])
-        else:
-            cmake = self._configure_cmake()
-            cmake.install()
-
-        with tools.chdir("sources"):
-            self.copy(pattern="LICENSE", dst="licenses", src="sources",
-                      ignore_case=True, keep_path=False)
+        cmake = self._get_configured_cmake()
+        cmake.install()
 
     def package_info(self):
-        self.env_info.OpenBLAS_HOME = self.package_folder
-        self.cpp_info.libs = tools.collect_libs(self)
-        if self._is_msvc:
-            self.cpp_info.includedirs.append(os.path.join("include", "openblas"))
+        # By default conan has the 'lib' folder in self.cpp_info.libdirs
+        # In case cmake.install in the build step generated a lib64 folder
+        # instead of lib, we move it to lib
+        try:
+            shutil.move("lib64", "lib")
+        except Exception:
+            pass
 
+        self.cpp_info.includedirs = ["include/openblas"]
+
+        # The openblas library has different names depending if it is a release
+        # of a debug build
+        if self.settings.build_type == "Debug" and self.options.shared:
+            # The name is different only for Debug build with shared libraries
+            self.cpp_info.libs = ["openblas_d"]
+        else:
+            self.cpp_info.libs = ["openblas"]
+
+        # In case of static library we need to also link with pthread
+        # Also, if it was built with lapack we need to also link with gfortran
         if self.settings.os == "Linux":
             self.cpp_info.libs.append("pthread")
-            if not self.options.NOFORTRAN:
+
+            if not self.options.BUILD_WITHOUT_LAPACK:
                 self.cpp_info.libs.append("gfortran")

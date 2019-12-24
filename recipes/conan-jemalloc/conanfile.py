@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import os, stat, glob
+import os
+import stat
+import glob
 from conans import ConanFile, AutoToolsBuildEnvironment, tools
 from conans.errors import ConanInvalidConfiguration
 from conans.model.version import Version
@@ -22,6 +24,7 @@ class JemallocConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
+        "static": [True, False],
         "without-export": [True, False],
         "with-private-namespace": [True, False],
         "with-malloc-conf": [True, False],
@@ -46,10 +49,11 @@ class JemallocConan(ConanFile):
     }
     default_options = {
         "shared": True,
+        "static": False,
         "without-export": False,
         "with-private-namespace": False,
         "with-malloc-conf": False,
-        "enable-debug": False,
+        "enable-debug": True,
         "disable-stats": False,
         "enable-prof": False,
         "enable-prof-libunwind": False,
@@ -89,29 +93,43 @@ class JemallocConan(ConanFile):
             for file in glob.glob("**/*.sh", recursive=True):
                 os.chmod(file, stat.S_IRWXU)
 
-            args = [""]
-            for key, value in self.options.items():
-                if key != "shared":
-                    if value is True:
-                        args += [
-                            "--{}".format(key),
-                        ]
+            args = ["--enable-shared" if self.options.shared else "--disable-shared"]
+            args.append("--enable-static" if self.options.static else "--disable-static")
 
+            for key, value in self.options.items():
+                if key != "shared" and key != "static":
+                    if value == "True":
+                        args.append("--" + key)
+
+            print("args = {}".format(args))
             self.run("./autogen.sh {}".format(" ".join(args)))
+
+            if tools.os_info.is_macos and self.options.shared:
+                ldflags = os.environ.get("LDFLAGS", "")
+                os.environ["LDFLAGS"] = ldflags + " "
+
             autotools = AutoToolsBuildEnvironment(self)
             env_build_vars = autotools.vars
-            autotools.configure(vars=env_build_vars)
+            autotools.configure(vars=env_build_vars, args=args)
+
+            if tools.os_info.is_macos and self.options.shared:
+                tools.replace_in_file(
+                    r"./Makefile",
+                    r"DSO_LDFLAGS = -shared -Wl,-install_name,$(LIBDIR)/$(@F)",
+                    r"DSO_LDFLAGS = -shared -Wl,-install_name,@rpath/$(@F)"
+                )
+
             autotools.make(vars=env_build_vars)
             autotools.install(vars=env_build_vars)
 
     def package(self):
         self.copy("LICENSE", dst="licenses", src=self._source_subfolder)
-        self.copy("*.h", dst="include", src=self._source_subfolder)
-        self.copy("*.inc", dst="include", src=self._source_subfolder)
-        self.copy("*.a", dst="lib", src=".", keep_path=False)
-        self.copy("*.lib", dst="lib", src=".", keep_path=False)
-        self.copy("*.so", dst="lib", src=".", keep_path=False)
-        self.copy("*.dll", dst="bin", src=".", keep_path=False)
+        if self.options.shared:
+            self.copy("*.so", dst="lib", src=".", keep_path=False)
+            self.copy("*.dll", dst="bin", src=".", keep_path=False)
+        else:
+            self.copy("*.a", dst="lib", src=".", keep_path=False)
+            self.copy("*.lib", dst="lib", src=".", keep_path=False)
 
     def package_info(self):
         if self.settings.os == "Linux":

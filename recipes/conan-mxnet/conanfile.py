@@ -44,7 +44,6 @@ class MxnetConan(ConanFile):
         if self.options.use_openmp:
             self.options["openblas"].USE_OPENMP = True
 
-        self.options["openblas"].NO_LAPACKE = True
         self.options["openblas"].shared = self.options.shared
 
         if self.options.use_jemalloc:
@@ -53,16 +52,17 @@ class MxnetConan(ConanFile):
 
         if self.options.use_lapack:
             self.requires("lapack/3.7.1@forwardmeasure/stable")
+            self.options["lapack"].shared = self.options.shared
+            self.options["openblas"].BUILD_WITHOUT_LAPACK = True
 
         if self.options.use_opencv:
-            self.requires("opencv/4.1.1@forwardmeasure/stable")
+            self.requires("opencv/4.2.0@forwardmeasure/stable")
             self.options["opencv"].shared = self.options.shared
 
     def source(self):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
-            "git clone {}.git {} && cd {} && "
-            "git checkout {} && git submodule update --init --recursive"
+            "git clone {}.git {} && cd {} && " "git checkout {} && git submodule update --init --recursive"
         ).format(self.url, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
 
@@ -78,11 +78,12 @@ class MxnetConan(ConanFile):
         tools.replace_in_file(
             os.path.join(self.source_folder, self._source_subfolder, "CMakeLists.txt"),
             "include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Utils.cmake)",
-"""
+            """
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/Utils.cmake)
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 conan_basic_setup(TARGETS KEEP_RPATHS)
-""",)
+""",
+        )
 
         tools.replace_in_file(
             os.path.join(self.source_folder, self._source_subfolder, "CMakeLists.txt"),
@@ -96,38 +97,35 @@ conan_basic_setup(TARGETS KEEP_RPATHS)
             os.path.join(self.source_folder, self._source_subfolder, "CMakeLists.txt"),
             "list(APPEND mxnet_LINKER_LIBS lapack)",
             'message("USE_LAPACK ON-NON MSVC")',
-         )
-
-        options = {}
-
-        options["USE_OLDCMAKECUDA"] = "OFF"
-        options["USE_MKL_IF_AVAILABLE"] = "OFF"  # leave this off until intel does a better license
-        options["USE_MKL_EXPERIMENTAL"] = "OFF"  # "
-        options["USE_MKLML_MKL"] = "OFF"  # "
-        options["USE_PROFILER"] = "OFF"
-        options["USE_DIST_KVSTORE"] = "OFF"
-        options["USE_PLUGINS_WARPCTC"] = "OFF"
-        options["USE_CPP_PACKAGE"] = "ON"
-        options["BUILD_CPP_EXAMPLES"] = "OFF"
-        options["DO_NOT_BUILD_EXAMPLES"] = "ON"
-
-        options["USE_CUDA"] = "ON" if self.options.use_cuda else "OFF"
-        options["USE_CUDNN"] = "ON" if self.options.use_cudnn else "OFF"
-        options["USE_OPENCV"] = "ON" if self.options.use_opencv else "OFF"
-        options["USE_OPENMP"] = "ON" if self.options.use_openmp else "OFF"
-        options["USE_LAPACK"] = "ON" if self.options.use_lapack else "OFF"
-        options["USE_OPERATOR_TUNING"] = "ON" if self.options.use_operator_tuning else "OFF"
-        options["USE_GPERFTOOLS"] = "ON" if self.options.use_gperftools else "OFF"
-        options["USE_JEMALLOC"] = "ON" if self.options.use_jemalloc else "OFF"
+        )
 
         cmake = CMake(self)
-        cmake.definitions = options
+        cmake.definitions["USE_OLDCMAKECUDA"] = "OFF"
+        cmake.definitions["USE_MKL_IF_AVAILABLE"] = "OFF"  # leave this off until intel does a better license
+        cmake.definitions["USE_MKL_EXPERIMENTAL"] = "OFF"  # "
+        cmake.definitions["USE_MKLML_MKL"] = "OFF"  # "
+        cmake.definitions["USE_PROFILER"] = "OFF"
+        cmake.definitions["USE_DIST_KVSTORE"] = "OFF"
+        cmake.definitions["USE_PLUGINS_WARPCTC"] = "OFF"
+        cmake.definitions["USE_CPP_PACKAGE"] = "ON"
+        cmake.definitions["BUILD_CPP_EXAMPLES"] = "OFF"
+        cmake.definitions["DO_NOT_BUILD_EXAMPLES"] = "ON"
+
+        cmake.definitions["USE_CUDA"] = "ON" if self.options.use_cuda else "OFF"
+        cmake.definitions["USE_CUDNN"] = "ON" if self.options.use_cudnn else "OFF"
+        cmake.definitions["USE_OPENCV"] = "ON" if self.options.use_opencv else "OFF"
+        cmake.definitions["USE_OPENMP"] = "ON" if self.options.use_openmp else "OFF"
+        cmake.definitions["USE_LAPACK"] = "ON" if self.options.use_lapack else "OFF"
+        cmake.definitions["USE_OPERATOR_TUNING"] = "ON" if self.options.use_operator_tuning else "OFF"
+        cmake.definitions["USE_GPERFTOOLS"] = "ON" if self.options.use_gperftools else "OFF"
+        cmake.definitions["USE_JEMALLOC"] = "ON" if self.options.use_jemalloc else "OFF"
+
         cmake.configure(source_folder=os.path.join(self.source_folder, self._source_subfolder))
 
         return cmake
 
     def build(self):
-        if self.settings.compiler == 'Visual Studio':
+        if self.settings.compiler == "Visual Studio":
             with tools.vcvars(self.settings, force=True, filter_known_paths=False):
                 self._build_cmake()
         else:
@@ -143,81 +141,119 @@ conan_basic_setup(TARGETS KEEP_RPATHS)
                 cmake.build(target="mxnet_static")
 
             cmake.build(target="cpp_package_op_h")
-#           self.run("cmake --build . --target cpp_package_op_h", run_environment=True)
 
-    def package(self):
+    #           self.run("cmake --build . --target cpp_package_op_h", run_environment=True)
+
+    def package_bad(self):
         cmake = CMake(self)
         cmake.configure(source_folder=os.path.join(self.source_folder, self._source_subfolder))
 
         cmake.install()
         if self.options.shared:
-            self.copy(pattern="*.dylib", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"))
-            self.copy(pattern="*.so", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"))
+            self.copy(
+                pattern="*.dylib",
+                dst="lib",
+                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"),
+            )
+            self.copy(
+                pattern="*.so", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib")
+            )
 
-            self.copy(pattern="*.dylib", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"))
-            self.copy(pattern="*.so", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"))
+            self.copy(
+                pattern="*.dylib",
+                dst="lib",
+                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
+            )
+            self.copy(
+                pattern="*.so",
+                dst="lib",
+                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
+            )
         else:
-            self.copy(pattern="*.a", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"))
-            self.copy(pattern="*.a", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"))
+            self.copy(
+                pattern="*.a", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib")
+            )
+            self.copy(
+                pattern="*.a",
+                dst="lib",
+                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
+            )
 
-    def package_old(self):
+    def package(self):
         if self.settings.compiler == "Visual Studio":
             cmake = CMake(self)
             cmake.install()
         else:
-            self.copy(pattern="*.h", dst="include",
-                      src=os.path.join(self._source_subfolder, "include"))
+            self.copy(pattern="*.h", dst="include", src=os.path.join(self._source_subfolder, "include"))
 
             # cpp package
-            self.copy(pattern="*.h", dst="include",
-                      src=os.path.join(self._source_subfolder, "cpp-package", "include"))
-            self.copy(pattern="*.hpp", dst="include",
-                      src=os.path.join(self._source_subfolder, "cpp-package", "include"))
+            self.copy(pattern="*.h", dst="include", src=os.path.join(self._source_subfolder, "cpp-package", "include"))
+            self.copy(
+                pattern="*.hpp", dst="include", src=os.path.join(self._source_subfolder, "cpp-package", "include")
+            )
 
             # nnvm
-            self.copy(pattern="*.h", dst="include",
-                      src=os.path.join(self._source_subfolder, "3rdparty", "nnvm", "include"))
-            self.copy(pattern="*.hpp", dst="include",
-                      src=os.path.join(self._source_subfolder, "3rdparty", "nnvm", "include"))
+            self.copy(
+                pattern="*.h", dst="include", src=os.path.join(self._source_subfolder, "3rdparty", "nnvm", "include")
+            )
+            self.copy(
+                pattern="*.hpp", dst="include", src=os.path.join(self._source_subfolder, "3rdparty", "nnvm", "include")
+            )
 
             # dmlc
-            self.copy(pattern="*.h", dst="include",
-                      src=os.path.join(self._source_subfolder, "3rdparty", "dmlc-core", "include"))
-            self.copy(pattern="*.hpp", dst="include",
-                      src=os.path.join(self._source_subfolder, "3rdparty", "dmlc-core", "include"))
+            self.copy(
+                pattern="*.h",
+                dst="include",
+                src=os.path.join(self._source_subfolder, "3rdparty", "dmlc-core", "include"),
+            )
+            self.copy(
+                pattern="*.hpp",
+                dst="include",
+                src=os.path.join(self._source_subfolder, "3rdparty", "dmlc-core", "include"),
+            )
 
             if self.options.shared:
                 self.copy(pattern="*.dylib", dst="lib", src="lib")
                 self.copy(pattern="*.so", dst="lib", src="lib")
 
-                self.copy(pattern="*.dylib", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "lib"))
-                self.copy(pattern="*.so", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "lib"))
+                self.copy(pattern="*.dylib", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "lib"))
+                self.copy(pattern="*.so", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "lib"))
 
-                self.copy(pattern="*.dylib", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"))
-                self.copy(pattern="*.so", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"))
+                self.copy(
+                    pattern="*.dylib",
+                    dst="lib",
+                    src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"),
+                )
+                self.copy(
+                    pattern="*.so",
+                    dst="lib",
+                    src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"),
+                )
 
-                self.copy(pattern="*.dylib", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"))
-                self.copy(pattern="*.so", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"))
+                self.copy(
+                    pattern="*.dylib",
+                    dst="lib",
+                    src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
+                )
+                self.copy(
+                    pattern="*.so",
+                    dst="lib",
+                    src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
+                )
 
             else:
                 self.copy(pattern="*.a", dst="lib", src="lib")
-                self.copy(pattern="*.a", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "lib"))
-                self.copy(pattern="*.a", dst="lib",
-                          src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"))
-                self.copy(pattern="*.a", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"))
+                self.copy(pattern="*.a", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "lib"))
+                self.copy(
+                    pattern="*.a",
+                    dst="lib",
+                    src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"),
+                )
+                self.copy(
+                    pattern="*.a",
+                    dst="lib",
+                    src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
+                )
 
     def package_info(self):
         self.cpp_info.libs = ["mxnet", "dmlc"]

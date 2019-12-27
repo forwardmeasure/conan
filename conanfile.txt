@@ -34,6 +34,7 @@
     lapack/3.7.1@forwardmeasure/stable
     jemalloc/5.2.1@forwardmeasure/stable
     mxnet/1.5.1@forwardmeasure/stable
+    xgboost/0.90@forwardmeasure/stable
 
 [generators]
     cmake

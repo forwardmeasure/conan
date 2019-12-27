@@ -10,14 +10,14 @@ class OpenEXRConan(ConanFile):
         "OpenEXR is a high dynamic-range (HDR) image file format developed by Industrial Light & "
         "Magic for use in computer imaging applications."
     )
+    topics = {"exr", "openexr", "image", "file format"}
     license = "BSD-3-Clause"
     url = "https://github.com/openexr/openexr"
-    homepage = "https://github.com/conan-io/conan-center-index"
+    homepage = "https://github.com/forwardmeasure/conan"
     settings = "os", "compiler", "build_type", "arch"
     options = {"shared": [True, False], "namespace_versioning": [True, False], "fPIC": [True, False]}
     default_options = {"shared": True, "namespace_versioning": True, "fPIC": True}
     generators = "cmake"
-    exports_sources = ["patches/*.patch"]
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
 
@@ -26,22 +26,16 @@ class OpenEXRConan(ConanFile):
             self.options.remove("fPIC")
 
     def requirements(self):
-        self.requires("zlib/1.2.11")
+        self.requires.add("zlib/1.2.11@conan/stable")
+
 
     def source(self):
         tools.get("{0}/archive/v{1}.tar.gz".format(self.url, self.version))
         extracted_dir = self.name.lower() + "-" + self.version
         os.rename(extracted_dir, self._source_subfolder)
 
-    def source_old(self):
-        tools.get(**self.conan_data["sources"][self.version])
-        patching = False
-        if patching:
-            for p in self.conan_data["patches"][self.version]:
-                tools.patch(**p)
-
     def build(self):
-        # parallel builds are disabled due to the random issue: 'toFloat.h': No such file or directory
+        # Parallel builds on Windows are disabled due to the random issue: 'toFloat.h': No such file or directory
         cmake = CMake(self, parallel=self.settings.os != "Windows")
         cmake.definitions["OPENEXR_BUILD_PYTHON_LIBS"] = False
         cmake.definitions["OPENEXR_BUILD_SHARED"] = self.options.shared
@@ -54,7 +48,6 @@ class OpenEXRConan(ConanFile):
         cmake.definitions["OPENEXR_BUILD_TESTS"] = False
 
         cmake.configure(source_folder=os.path.join(self.source_folder, self._source_subfolder))
-
         cmake.build()
 
     def package(self):

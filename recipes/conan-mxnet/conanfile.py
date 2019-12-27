@@ -142,43 +142,6 @@ conan_basic_setup(TARGETS KEEP_RPATHS)
 
             cmake.build(target="cpp_package_op_h")
 
-    #           self.run("cmake --build . --target cpp_package_op_h", run_environment=True)
-
-    def package_bad(self):
-        cmake = CMake(self)
-        cmake.configure(source_folder=os.path.join(self.source_folder, self._source_subfolder))
-
-        cmake.install()
-        if self.options.shared:
-            self.copy(
-                pattern="*.dylib",
-                dst="lib",
-                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib"),
-            )
-            self.copy(
-                pattern="*.so", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib")
-            )
-
-            self.copy(
-                pattern="*.dylib",
-                dst="lib",
-                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
-            )
-            self.copy(
-                pattern="*.so",
-                dst="lib",
-                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
-            )
-        else:
-            self.copy(
-                pattern="*.a", dst="lib", src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "nnvm", "lib")
-            )
-            self.copy(
-                pattern="*.a",
-                dst="lib",
-                src=os.path.join(self._source_subfolder, "mxnet", "3rdparty", "dmlc-core", "lib"),
-            )
-
     def package(self):
         if self.settings.compiler == "Visual Studio":
             cmake = CMake(self)

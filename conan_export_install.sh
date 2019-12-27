@@ -16,9 +16,7 @@ myName=$(basename $0)
 #################################################################################
 # We custom export a number of recipes, as there do not exist common ones for them
 #################################################################################
-LIBS_TO_EXPORT="json4moderncpp expat apache-apr apache-apr-util apache-log4cxx abseil protobuf opencv
-grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome libtorch openblas
-lapack jemalloc mxnet openexr"
+LIBS_TO_EXPORT="json4moderncpp expat apache-apr apache-apr-util apache-log4cxx abseil protobuf opencv grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome libtorch openblas lapack jemalloc mxnet openexr xgboost"
 for i in ${LIBS_TO_EXPORT}
 do
 	dir="${SCRIPTS_DIR}/recipes/conan-${i}"

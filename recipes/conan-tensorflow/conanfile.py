@@ -326,37 +326,6 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
-    def _copy_tf_libs_old(self, src_dir, dest_dir, search_patterns=None):
-        try:
-            if search_patterns is None:
-                search_patterns = ["*.so"]
-
-            print(
-                "_copy_tf_libs(): copying file matching patterns %s from %s to %s"
-                % (str(search_patterns), src_dir, dest_dir)
-            )
-            for f in self._find_files(src_dir=src_dir, search_patterns=search_patterns):
-                print("Copying %s to %s" % (f, dest_dir))
-                self._copy_file(f, dest_dir, verbose=True)
-
-            # If we are on Mac, copy inidvidual files, since wildcarding on *.dylib ended up in an infinite loop
-            os_name = str(self.settings.os).lower()
-            if os_name == "macos":
-                tf_framework_dylib = (
-                    os.path.join(src_dir, "tensorflow", "libtensorflow_framework.1.dylib")
-                    if self.version < Version("2.0.0")
-                    else os.path.join(src_dir, "tensorflow", "libtensorflow_framework.2.dylib")
-                )
-                print("Copying %s to %s" % (tf_framework_dylib, dest_dir))
-                self._copy_file(tf_framework_dylib, dest_dir, verbose=True)
-
-        except Exception as inst:
-            print("Exception caught copying tf libs")
-            print(inst)
-
-    ################################################################################################################
-    #
-    ################################################################################################################
     def _fix_up_pkgconfig_file(self):
         self.copy(pattern="tensorflow.pc.in", dst="tensorflow.pc", src=self._source_subfolder)
         tools.replace_in_file("tensorflow.pc", "@version@", self.version, strict=True)
@@ -397,8 +366,8 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     def source(self):
         sha256 = "49b5f0495cd681cbcb5296a4476853d4aea19a43bdd9f179c928a977308a0617"
-        archive_name = "master"
-        tools.get("{0}/archive/{1}.tar.gz".format(self.homepage, archive_name))
+        archive_name = "master" # Temporary, until 2.1.x is formally released
+        tools.get("{0}/archive/{1}.tar.gz".format(self.homepage, archive_name)) # Omit SHA check for now
         extracted_dir = self.name + "-" + archive_name
         os.rename(extracted_dir, self._source_subfolder)
         print("Downloaded archive from %s to %s" % (self.homepage, extracted_dir))

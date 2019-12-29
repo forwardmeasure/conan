@@ -11,7 +11,7 @@
 	cctz/2.3@bincrafters/stable
 	boost/1.69.0@conan/stable
 	c-ares/1.15.0@conan/stable
-	OpenSSL/1.1.1c@conan/stable
+	OpenSSL/1.1.1d@conan/stable
 	Catch2/2.10.2@catchorg/stable
 	xtl/0.6.8@forwardmeasure/stable
 	xframe/0.2.0@forwardmeasure/stable

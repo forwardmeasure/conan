@@ -246,17 +246,17 @@ class TensorFlowConan(ConanFile):
     #
     ################################################################################################################
     def _copy_file(self, src_file, dest_dir, verbose=True):
-        print("Copying %s to %s" % (src_file, dest_dir))
+        print("_copy_file: copying %s to %s" % (src_file, dest_dir))
         if not os.path.isfile(src_file):
-            print("Source %s must be a file" % (src_file))
+            print("_copy_file: source %s must be a file" % (src_file))
             return
 
         if not os.path.isdir(dest_dir):
-            print("Destination must be a directory and not a file")
+            print("_copy_file: destination must be a directory and not a file")
             return
 
         dest_file = os.path.join(dest_dir, os.path.basename(src_file))
-        print("Copying %s as %s" % (src_file, dest_file))
+        print("_copy_file: copying %s as %s" % (src_file, dest_file))
 
         if os.path.islink(src_file):
             # If the destinantion file exists as a link, unlink
@@ -275,7 +275,9 @@ class TensorFlowConan(ConanFile):
 
             return dest_file
         else:
-            shutil.copy(src_file, dest_dir)
+            if not os.path.exists(dest_file):
+                shutil.copy(src_file, dest_dir)
+
             print("Returning %s" % (dest_file))
             return dest_file
 

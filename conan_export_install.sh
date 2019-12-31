@@ -25,6 +25,7 @@ do
 	then
 		echo "$myName: Exporting recipe for package $dirBase"
  		conan export ${dir} ${CONAN_CHANNEL}
+#		conan create ${dir} ${CONAN_CHANNEL} --keep-source
 	else
 		echo "Skipping $dirBase"
 	fi

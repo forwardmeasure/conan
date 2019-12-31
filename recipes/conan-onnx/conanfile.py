@@ -3,7 +3,7 @@ from conans.errors import ConanInvalidConfiguration
 import os
 
 class ONNXConan(ConanFile):
-    name = "ONNX"
+    name = "onnx"
     version = "1.6.0"
     url = "https://github.com/forwardmeasure/conan"
     homepage="https://github.com/onnx/onnx"

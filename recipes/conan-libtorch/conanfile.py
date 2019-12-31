@@ -10,9 +10,7 @@ class LibtorchConan(ConanFile):
     homepage = "https://github.com/forwardmeasure/conan"
     topics = ("conan", "ONNX", "neural networks")
     author = "Prashanth Nandavanam <pn@forwardmeasure.com>"
-    description = (
-        "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
-    )
+    description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
     license = "Apache-2.0"
     exports = ["LICENSE.md"]
     exports_sources = ["CMakeLists.txt"]
@@ -51,6 +49,7 @@ class LibtorchConan(ConanFile):
         "use_nnapi": [True, False],
         "use_nnpack": [True, False],
         "use_numpy": [True, False],
+        "use_numa": [True, False],
         "use_observers": [True, False],
         "use_opencl": [True, False],
         "use_opencv": [True, False],
@@ -70,8 +69,8 @@ class LibtorchConan(ConanFile):
         "build_with_torch_libs": [True, False],
     }
     default_options = {
-        "enable_parallel_build": True,
-        "use_ninja_build": True,
+        "enable_parallel_build": False,
+        "use_ninja_build": False,
         "shared": True,
         "fPIC": True,
         "aten_no_test": False,
@@ -99,6 +98,7 @@ class LibtorchConan(ConanFile):
         "use_nnapi": False,
         "use_nnpack": True,
         "use_numpy": True,
+        "use_numa": False,
         "use_observers": False,
         "use_opencl": False,
         "use_opencv": False,
@@ -126,23 +126,18 @@ class LibtorchConan(ConanFile):
             del self.options.fPIC
             compiler_version = int(str(self.settings.compiler.version))
             if compiler_version < 14:
-                raise ConanInvalidConfiguration(
-                    "Libtorch can only be built with Visual Studio 2015 or higher."
-                )
+                raise ConanInvalidConfiguration("Libtorch can only be built with Visual Studio 2015 or higher.")
 
     def source(self):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
-            "git clone {}.git {} && cd {} && "
-            "git checkout v{} && git submodule update --init --recursive"
+            "git clone {}.git {} && cd {} && " "git checkout v{} && git submodule update --init --recursive"
         ).format(self.url, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
 
     def build_requirements(self):
         if not self.options.build_custom_protobuf:
-            self.build_requires(
-                "protobuf/3.8.0@forwardmeasure/stable"
-            )  # Could use the one from bincrafters
+            self.build_requires("protobuf/3.8.0@forwardmeasure/stable")  # Could use the one from bincrafters
         if self.options.use_system_eigen_install:
             self.build_requires("eigen/3.3.7@conan/stable")
         if self.options.build_test:
@@ -152,20 +147,22 @@ class LibtorchConan(ConanFile):
 
     def _configure_cmake(self):
         # Pach caffe2/CMakeLists.txt to correctly reference aten library
-        self._patch()
+        # self._patch()
 
         env_build = dict()
         # Not sure why the build breaks becasue of missing defs for CAFFE2_PERF_WITH_AVX, etc. so just adding these for now
         env_build["CAFFE2_PERF_WITH_AVX"] = "ON"
         env_build["CAFFE2_PERF_WITH_AVX2"] = "ON"
         env_build["CAFFE2_PERF_WITH_AVX512"] = "ON"
+
         with tools.environment_append(env_build):
-            if self.options.use_ninja_build:
-                cmake = CMake(self, generator="Ninja", set_cmake_flags=True)
-            else:
-                cmake = CMake(self, generator="Unix Makefiles", set_cmake_flags=True)
-            cmake.parallel = True if self.options.enable_parallel_build else False
-            cmake = CMake(self, set_cmake_flags=True)
+            cmake = (
+                CMake(self, generator="Ninja", set_cmake_flags=True, parallel=self.options.enable_parallel_build)
+                if self.options.use_ninja_build
+                else CMake(
+                    self, generator="Unix Makefiles", set_cmake_flags=True, parallel=self.options.enable_parallel_build
+                )
+            )
 
             cmake.verbose = True
 
@@ -174,34 +171,16 @@ class LibtorchConan(ConanFile):
             cmake.definitions["CAFFE2_PERF_WITH_AVX2"] = "ON"
             cmake.definitions["CAFFE2_PERF_WITH_AVX512"] = "ON"
 
-            cmake.definitions["BUILD_SHARED_LIBS"] = (
-                "ON" if self.options.shared else "OFF"
-            )
-            cmake.definitions["ATEN_NO_TEST"] = (
-                "ON" if self.options.aten_no_test else "OFF"
-            )
-            cmake.definitions["BUILD_BINARY"] = (
-                "ON" if self.options.build_binary else "OFF"
-            )
+            cmake.definitions["BUILD_SHARED_LIBS"] = "ON" if self.options.shared else "OFF"
+            cmake.definitions["ATEN_NO_TEST"] = "ON" if self.options.aten_no_test else "OFF"
+            cmake.definitions["BUILD_BINARY"] = "ON" if self.options.build_binary else "OFF"
             cmake.definitions["BUILD_DOCS"] = "ON" if self.options.build_docs else "OFF"
-            cmake.definitions["BUILDING_WITH_TORCH_LIBS"] = (
-                "ON" if self.options.build_with_torch_libs else "OFF"
-            )
-            cmake.definitions["BUILD_CUSTOM_PROTOBUF"] = (
-                "ON" if self.options.build_custom_protobuf else "OFF"
-            )
-            cmake.definitions["BUILD_PYTHON"] = (
-                "ON" if self.options.build_python else "OFF"
-            )
-            cmake.definitions["BUILD_CAFFE2_OPS"] = (
-                "ON" if self.options.build_caffe2_ops else "OFF"
-            )
-            cmake.definitions["BUILD_CAFFE2_MOBILE"] = (
-                "ON" if self.options.build_caffe2_mobile else "OFF"
-            )
-            cmake.definitions["BUILD_NAMEDTENSOR"] = (
-                "ON" if self.options.build_named_tensor else "OFF"
-            )
+            cmake.definitions["BUILDING_WITH_TORCH_LIBS"] = "ON" if self.options.build_with_torch_libs else "OFF"
+            cmake.definitions["BUILD_CUSTOM_PROTOBUF"] = "ON" if self.options.build_custom_protobuf else "OFF"
+            cmake.definitions["BUILD_PYTHON"] = "ON" if self.options.build_python else "OFF"
+            cmake.definitions["BUILD_CAFFE2_OPS"] = "ON" if self.options.build_caffe2_ops else "OFF"
+            cmake.definitions["BUILD_CAFFE2_MOBILE"] = "ON" if self.options.build_caffe2_mobile else "OFF"
+            cmake.definitions["BUILD_NAMEDTENSOR"] = "ON" if self.options.build_named_tensor else "OFF"
             cmake.definitions["BUILD_TEST"] = "ON" if self.options.build_test else "OFF"
             cmake.definitions["USE_ASAN"] = "ON" if self.options.use_asan else "OFF"
             cmake.definitions["USE_CUDA"] = "ON" if self.options.use_cuda else "OFF"
@@ -209,63 +188,37 @@ class LibtorchConan(ConanFile):
             cmake.definitions["USE_FBGEMM"] = "ON" if self.options.use_fbgemm else "OFF"
             cmake.definitions["USE_GFLAGS"] = "ON" if self.options.use_gflags else "OFF"
             cmake.definitions["USE_GLOG"] = "ON" if self.options.use_glog else "OFF"
-            cmake.definitions["USE_LEVELDB"] = (
-                "ON" if self.options.use_leveldb else "OFF"
-            )
-            cmake.definitions["USE_LITE_PROTO"] = (
-                "ON" if self.options.use_lite_proto else "OFF"
-            )
+            cmake.definitions["USE_LEVELDB"] = "ON" if self.options.use_leveldb else "OFF"
+            cmake.definitions["USE_LITE_PROTO"] = "ON" if self.options.use_lite_proto else "OFF"
             cmake.definitions["USE_LMDB"] = "ON" if self.options.use_lmdb else "OFF"
             cmake.definitions["USE_METAL"] = "ON" if self.options.use_metal else "OFF"
-            cmake.definitions["USE_NATIVE_ARCH"] = (
-                "ON" if self.options.use_native_arch else "OFF"
-            )
+            cmake.definitions["USE_NATIVE_ARCH"] = "ON" if self.options.use_native_arch else "OFF"
             cmake.definitions["USE_NNAPI"] = "ON" if self.options.use_nnapi else "OFF"
             cmake.definitions["USE_NNPACK"] = "ON" if self.options.use_nnpack else "OFF"
             cmake.definitions["USE_NUMPY"] = "ON" if self.options.use_numpy else "OFF"
-            cmake.definitions["USE_OBSERVERS"] = (
-                "ON" if self.options.use_observers else "OFF"
-            )
+            cmake.definitions["USE_NUMA"] = "ON" if self.options.use_numa else "OFF"
+            cmake.definitions["USE_OBSERVERS"] = "ON" if self.options.use_observers else "OFF"
             cmake.definitions["USE_OPENCL"] = "ON" if self.options.use_opencl else "OFF"
             cmake.definitions["USE_OPENCV"] = "ON" if self.options.use_opencv else "OFF"
             cmake.definitions["USE_OPENMP"] = "ON" if self.options.use_openmp else "OFF"
             cmake.definitions["USE_PROF"] = "ON" if self.options.use_prof else "OFF"
-            cmake.definitions["USE_QNNPACK"] = (
-                "ON" if self.options.use_qnnpack else "OFF"
-            )
-            cmake.definitions["USE_PYTORCH_QNNPACK"] = (
-                "ON" if self.options.use_pytorch_qnnpack else "OFF"
-            )
+            cmake.definitions["USE_QNNPACK"] = "ON" if self.options.use_qnnpack else "OFF"
+            cmake.definitions["USE_PYTORCH_QNNPACK"] = "ON" if self.options.use_pytorch_qnnpack else "OFF"
             cmake.definitions["USE_REDIS"] = "ON" if self.options.use_redis else "OFF"
-            cmake.definitions["USE_ROCKSDB"] = (
-                "ON" if self.options.use_rocksdb else "OFF"
-            )
+            cmake.definitions["USE_ROCKSDB"] = "ON" if self.options.use_rocksdb else "OFF"
             cmake.definitions["USE_SNPE"] = "ON" if self.options.use_snpe else "OFF"
-            cmake.definitions["USE_SYSTEM_EIGEN_INSTALL"] = (
-                "ON" if self.options.use_system_eigen_install else "OFF"
-            )
-            cmake.definitions["USE_TENSORRT"] = (
-                "ON" if self.options.use_tensorrt else "OFF"
-            )
+            cmake.definitions["USE_SYSTEM_EIGEN_INSTALL"] = "ON" if self.options.use_system_eigen_install else "OFF"
+            cmake.definitions["USE_TENSORRT"] = "ON" if self.options.use_tensorrt else "OFF"
             cmake.definitions["USE_ZMQ"] = "ON" if self.options.use_zmq else "OFF"
             cmake.definitions["USE_ZSTD"] = "ON" if self.options.use_zstd else "OFF"
-            cmake.definitions["USE_DISTRIBUTED"] = (
-                "ON" if self.options.use_distributed else "OFF"
-            )
+            cmake.definitions["USE_DISTRIBUTED"] = "ON" if self.options.use_distributed else "OFF"
             cmake.definitions["USE_TBB"] = "ON" if self.options.use_tbb else "OFF"
 
-            cmake.configure(build_folder=self._build_subfolder)
+            cmake.configure(
+                source_folder=os.path.join(self.source_folder, self._source_subfolder),
+                build_folder=os.path.join(self.source_folder, self._source_subfolder, self._build_subfolder),
+            )
         return cmake
-
-    def _patch(self):
-        cmake_file_to_clean = os.path.join(
-            self.source_folder, "source_subfolder", "caffe2", "CMakeLists.txt"
-        )
-        tools.replace_in_file(
-            cmake_file_to_clean,
-            "--yaml_dir=${CMAKE_CURRENT_BINARY_DIR}/../aten/src/ATen",
-            "--yaml_dir=${CMAKE_CURRENT_BINARY_DIR}/../../aten/src/ATen",
-        )
 
     def _build_cmake(self):
         cmake = self._configure_cmake()

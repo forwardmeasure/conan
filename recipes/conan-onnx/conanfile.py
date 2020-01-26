@@ -2,17 +2,24 @@ from conans import ConanFile, CMake, tools, RunEnvironment
 from conans.errors import ConanInvalidConfiguration
 import os
 
+
 class ONNXConan(ConanFile):
-    name = "onnx"
+    name = "ONNX"
     version = "1.6.0"
     url = "https://github.com/forwardmeasure/conan"
-    homepage="https://github.com/onnx/onnx"
+    homepage = "https://github.com/onnx/onnx"
     topics = ("conan", "ONNX", "neural networks")
     author = "Prashanth Nandavanam <pn@forwardmeasure.com>"
     description = "ONNX - An open Neural Network Exchange"
     license = "Apache-2.0"
     exports = ["LICENSE.md"]
-    exports_sources = ["CMakeLists.txt", "FindONNX.cmake", "SelectLibraryConfigurations.cmake", "FindPackageMessage.cmake", "FindPackageHandleStandardArgs.cmake"]
+    exports_sources = [
+        "CMakeLists.txt",
+        "FindONNX.cmake",
+        "SelectLibraryConfigurations.cmake",
+        "FindPackageMessage.cmake",
+        "FindPackageHandleStandardArgs.cmake",
+    ]
     generators = "cmake"
     settings = "os", "compiler", "build_type", "arch"
     short_paths = True  # Otherwise some folders go out of the 260 chars path length scope rapidly (on windows)
@@ -25,7 +32,7 @@ class ONNXConan(ConanFile):
         "build_benchmarks": [True, False],
         "use_lite_proto": [True, False],
         "ifi_dummy_backend": [True, False],
-        "build_tests": [True, False]
+        "build_tests": [True, False],
     }
     default_options = {
         "shared": True,
@@ -34,15 +41,13 @@ class ONNXConan(ConanFile):
         "build_benchmarks": False,
         "use_lite_proto": False,
         "ifi_dummy_backend": False,
-        "build_tests": False
+        "build_tests": False,
     }
 
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
 
-    requires = (
-        "protobuf/3.10.1@forwardmeasure/stable",
-    )
+    requires = ("protobuf/3.8.0@forwardmeasure/stable",)
 
     def configure(self):
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":
@@ -52,8 +57,7 @@ class ONNXConan(ConanFile):
                 raise ConanInvalidConfiguration("gRPC can only be built with Visual Studio 2015 or higher.")
 
     def source(self):
-        source_url="https://github.com/onnx/onnx"
-        tools.get("{0}/archive/v{1}.tar.gz".format(source_url, self.version))
+        tools.get("{0}/archive/v{1}.tar.gz".format(self.homepage, self.version))
         extracted_dir = self.name.lower() + "-" + self.version
         os.rename(extracted_dir, self._source_subfolder)
 
@@ -66,24 +70,28 @@ class ONNXConan(ConanFile):
         cmake = CMake(self, set_cmake_flags=True)
         cmake.verbose = True
 
-        cmake.definitions['BUILD_ONNX_PYTHON'] = "ON" if self.options.build_python else "OFF"
-        cmake.definitions['ONNX_BUILD_BENCHMARKS'] = "ON" if self.options.build_benchmarks else "OFF"
-        cmake.definitions['ONNX_USE_LITE_PROTO'] = "ON" if self.options.use_lite_proto else "OFF"
-        cmake.definitions['ONNXIFI_DUMMY_BACKEND'] = "ON" if self.options.ifi_dummy_backend else "OFF"
-        cmake.definitions['ONNX_BUILD_TESTS'] = "ON" if self.options.build_tests else "OFF"
+        cmake.definitions["BUILD_ONNX_PYTHON"] = "ON" if self.options.build_python else "OFF"
+        cmake.definitions["ONNX_BUILD_BENCHMARKS"] = "ON" if self.options.build_benchmarks else "OFF"
+        cmake.definitions["ONNX_USE_LITE_PROTO"] = "ON" if self.options.use_lite_proto else "OFF"
+        cmake.definitions["ONNXIFI_DUMMY_BACKEND"] = "ON" if self.options.ifi_dummy_backend else "OFF"
+        cmake.definitions["ONNX_BUILD_TESTS"] = "ON" if self.options.build_tests else "OFF"
 
         # We need the generated cmake/ files (bc they depend on the list of targets, which is dynamic)
-        cmake.definitions['ONNX_INSTALL'] = "ON"
+        cmake.definitions["ONNX_INSTALL"] = "ON"
 
         cmake.configure(build_folder=self._build_subfolder)
         return cmake
 
-#   def build(self):
-#       env_build = RunEnvironment(self)
-#       with tools.environment_append(env_build.vars):
-#           cmake = self._configure_cmake()
-#           self.run('cmake "%s" %s' % (self.source_folder, cmake.command_line), run_environment=True)
-#           self.run('cmake --build . %s' % cmake.build_config, run_environment=True)
+    def _build_cmake(self):
+        cmake = self._configure_cmake()
+        cmake.build()
+
+    def build(self):
+        if self.settings.compiler == "Visual Studio":
+            with tools.vcvars(self.settings, force=True, filter_known_paths=False):
+                self._build_cmake()
+        else:
+            self._build_cmake()
 
     def package(self):
         self.copy("LICENSE", dst="licenses", src=self._source_subfolder)

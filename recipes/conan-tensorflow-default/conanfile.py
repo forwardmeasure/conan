@@ -1,7 +1,4 @@
 import os
-import subprocess
-import platform
-import re
 import shutil
 import sys
 import contextlib
@@ -17,15 +14,15 @@ from conans.model.version import Version
 class TensorFlowConan(ConanFile):
     name = "tensorflow"
     version = "2.1.0"
-    folder_name = name + ("_%s" % version.replace(".", "_"))
     homepage = "https://github.com/tensorflow/tensorflow"
     topics = ("conan", "tensorflow", "Machine Learning", "Neural Networks")
-    url = "https://github.com/forwardmeasuyre/conan"
+    url = "https://github.com/forwardmeasure/conan"
     description = "A Conan recipe to build Tensorflow C++ from code"
     author = "Prashanth Nandavanam <pn@forwardmeasure.com>"
     license = "Apache-2.0"
+    _grpc_patch_file = "grpc_gettid.patch"
     exports = ["LICENSE.md", "tensorflow.pc.in", "tensorflow.pc"]
-    exports_sources = ["tensorflow.pc.in", "tensorflow.pc"]
+    exports_sources = [_grpc_patch_file, "tensorflow.pc.in", "tensorflow.pc"]
     settings = "os", "arch", "compiler", "build_type"
     options = {
         "shared": [True, False],
@@ -88,21 +85,27 @@ class TensorFlowConan(ConanFile):
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
     _bazel_cache_dir = os.path.join(os.environ["CONAN_USER_HOME"], "BAZEL_CACHE")
-    _grpc_version = "1.26.0"
-    _protobuf_version = "3.8.0"
-
-    short_paths = True
-    exports = ["patches/*"]
+    _grpc_version = "1.19.1"
 
     ################################################################################################################
     #
     ################################################################################################################
-    def build_requirements(self):
-        if not tools.which("bazel"):
-            self.build_requires("bazel_installer/1.1.0@bincrafters/stable")
-        self.build_requires("OpenSSL/1.1.1d@forwardmeasure/stable")
-        self.build_requires("grpc/1.26.0@forwardmeasure/stable")
-        self.build_requires("protobuf/3.8.0@forwardmeasure/stable")
+    def _find_grpc_src_dir(self, top_dir):
+        # print("_find_grpc_src_dir(): top_dir = %s" % (top_dir))
+        for (path, _, _) in os.walk(top_dir):
+            base_name = os.path.basename(path)
+            dir_name = os.path.dirname(path)
+            inner_dir_name = os.path.basename(dir_name)
+            print(
+                "_find_grpc_src_dir(): base_name = %s, dir_name = %s, inner_dir_name = %s"
+                % (base_name, dir_name, inner_dir_name)
+            )
+
+            if base_name == "src" and inner_dir_name == "grpc":
+                inner_inner_dirname = os.path.basename(os.path.dirname(dir_name))
+                if inner_inner_dirname == "external":
+                    return os.path.dirname(path)
+        return ""
 
     ################################################################################################################
     #
@@ -118,85 +121,165 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
-    def _build_bazel_target(self, bazel_config_flags, target, static_link_stdcpp):
-        print(
-            "_build_bazel_target(): installing target with {} link".format(
-                target, "static" if static_link_stdcpp else "dynamic"
-            )
-        )
-        env_build = dict()
-        # This is a shite, ugly hack. Linking with devtoolset on Bazel is jacked.
-        if static_link_stdcpp:
-            #            env_build["BAZEL_LINKOPTS"] = "-static-libstdc++:-lm"
-            env_build["BAZEL_LINKLIBS"] = "-l%:libstdc++.a"
+    def _fix_grpc_version(self):
+        """
+        TF is usually bundled with really old versions of protobuf and gRPC. So, we cheekily
+        upgarde them in place in the workspace the bazel before the build kicks off. We need
+        to replace two things: the sha256 signature and the commit id of the particular version we want to use.
+        sha256: Unfortunately at this point, I don't know how to get this value any other way than to install it using Conan
+        commit id: Github keeps the commit ID of each PR that is approved, and you can pull specific commig IDs (standard git practice)
+        You can check the checksums thus: shasum -a 1 grpc-1.25.0.zip* && shasum -a 256 grpc-1.25.0.zip
+        """
+        print("Fixing gRPC version...")
+        bazel_workspace_path = os.path.realpath("tensorflow/workspace.bzl")
+        print("Bazel workspace path = %s" % (bazel_workspace_path))
 
-        with tools.environment_append(env_build):
-            self.run(
-                "bazel --output_user_root=%s --host_jvm_args=-Xms512M --host_jvm_args=-Xmx8192M build -s --jobs 12 --incompatible_no_support_tools_in_action_inputs=false --nodiscard_analysis_cache --keep_state_after_build --track_incremental_state --verbose_failures %s %s"
-                % (self._bazel_cache_dir, bazel_config_flags, target)
-            )
+        # gRPC 1.25 github sha256 hash
+        tools.replace_in_file(
+            bazel_workspace_path,
+            "67a6c26db56f345f7cee846e681db2c23f919eba46dd639b09462d1b6203d28c",
+            "ffbe61269160ea745e487f79b0fd06b6edd3d50c6d9123f053b5634737cf2f69",
+            strict=True,
+        )
+
+        # gRPC 1.25 github sha1 hash
+        tools.replace_in_file(
+            bazel_workspace_path,
+            'strip_prefix = "grpc-4566c2a29ebec0835643b972eb99f4306c4234a3"',
+            'strip_prefix = "grpc-1.25.0"',
+            strict=True,
+        )
+        # gRPC 1.25 github sha1 hash
+        tools.replace_in_file(
+            bazel_workspace_path,
+            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grpc/grpc/archive/4566c2a29ebec0835643b972eb99f4306c4234a3.tar.gz",
+            "https://storage.googleapis.com/mirror.tensorflow.org/github.com/grpc/grpc/archive/v1.25.0.tar.gz",
+            strict=True,
+        )
+        # gRPC 1.25 github sha1 hash
+        tools.replace_in_file(
+            bazel_workspace_path,
+            "https://github.com/grpc/grpc/archive/4566c2a29ebec0835643b972eb99f4306c4234a3.tar.gz",
+            "https://github.com/grpc/grpc/archive/v1.25.0.tar.gz",
+            strict=True,
+        )
 
     ################################################################################################################
     #
     ################################################################################################################
-    def _copy_file(self, src_file: str, dest_dir: str, verbose=True) -> str:
-        print("_copy_file(): copying %s to %s" % (src_file, dest_dir))
+    def _fix_protobuf_version(self):
+        """
+        TF is usually bundled with really old versions of protobuf and gRPC. So, we cheekily
+        upgarde them in place in the workspace the bazel before the build kicks off. We need
+        to replace two things: the sha256 signature and the commit id of the particular version we want to use.
+        sha256: Unfortunately at this point, I don't know how to get this value any other way than to install it using Conan
+        commit id: Github keeps the commit ID of each PR that is approved, and you can pull specific commit IDs.
+        The version of gRPC can be found in the file: gRPC.podspec under the extracted source.
+        """
+        print("Fixing protobuf version...")
+        bazel_workspace_path = os.path.realpath("tensorflow/workspace.bzl")
+        print("Bazel workspace path = %s" % (bazel_workspace_path))
 
-        if src_file is None:
-            print("_copy_file(): cannot process null source %s" % (src_file))
-            return None
+        # Protobuf 3.10.1 github sha256 hash
+        tools.replace_in_file(
+            bazel_workspace_path,
+            "b9e92f9af8819bbbc514e2902aec860415b70209f31dfc8c4fa72515a5df9d59",
+            "632c4ba94cd9c684cb1b7b9644f796209ae5b73dd440221a23c7fb334d51fb81",
+            strict=True,
+        )
+        # Protobuf 3.10.1 github commit id
+        tools.replace_in_file(
+            bazel_workspace_path,
+            "310ba5ee72661c081129eb878c1bbcec936b20f0",
+            "d09d649aea36f02c03f8396ba39a8d4db8a607e4",
+            strict=True,
+        )
+        # Remove call to patch protobuf
+        tools.replace_in_file(
+            bazel_workspace_path, "        patch_file = clean_dep(PROTOBUF_PATCH),\n", "", strict=True,
+        )
+        tools.replace_in_file(
+            bazel_workspace_path, "sha256 = PROTOBUF_SHA256", "        sha256 = PROTOBUF_SHA256,", strict=True,
+        )
+        return
 
-        if dest_dir is None:
-            print("_copy_file(): cannot process null source %s" % (dest_dir))
-            return None
+    ################################################################################################################
+    #
+    ################################################################################################################
+    def _patch_grpc(self, bazel_cache_dir):
+        # Determine where to find the grpc sources
+        grpc_source_dir = self._find_grpc_src_dir(bazel_cache_dir)
 
-        if not os.path.isfile(src_file) and not os.path.islink(src_file):
-            print("_copy_file(): source %s must be a file or link" % (src_file))
-            return None
+        # Copy patch file
+        source_folder_path = os.path.dirname(os.path.abspath(self._source_subfolder))
+        # print("Source folder = %s" % (source_folder_path))
+        grpc_patch_file_path = os.path.realpath(os.path.dirname(source_folder_path) + os.sep + self._grpc_patch_file)
+        # print("Copying %s to %s" % (grpc_patch_file_path, grpc_source_dir))
+        shutil.copy(grpc_patch_file_path, grpc_source_dir)
+        grpc_patch_file_path = os.path.realpath(grpc_source_dir + os.sep + self._grpc_patch_file)
+
+        # print("Patching grpc source %s using %s" % (grpc_source_dir, grpc_patch_file_path))
+        tools.patch(base_path=grpc_source_dir, patch_file=grpc_patch_file_path)
+
+        return
+
+    ################################################################################################################
+    #
+    ################################################################################################################
+    def _build_bazel_target(self, bazel_config_flags, target):
+        self.run(
+            "bazel --output_user_root=%s --host_jvm_args=-Xms512M --host_jvm_args=-Xmx8192M build --jobs 12 --incompatible_no_support_tools_in_action_inputs=false --nodiscard_analysis_cache --keep_state_after_build --track_incremental_state --verbose_failures %s %s"
+            % (self._bazel_cache_dir, bazel_config_flags, target)
+        )
+
+    ################################################################################################################
+    #
+    ################################################################################################################
+    @contextlib.contextmanager
+    def _pushd(self, new_dir):
+        previous_dir = os.getcwd()
+        os.chdir(new_dir)
+        yield
+        os.chdir(previous_dir)
+
+    ################################################################################################################
+    #
+    ################################################################################################################
+    def _copy_file(self, src_file, dest_dir, verbose=True):
+        print("_copy_file: copying %s to %s" % (src_file, dest_dir))
+        if not os.path.isfile(src_file):
+            print("_copy_file: source %s must be a file" % (src_file))
+            return
 
         if not os.path.isdir(dest_dir):
-            print("_copy_file(): destination must be a directory and not a file")
-            return None
+            print("_copy_file: destination must be a directory and not a file")
+            return
+
+        dest_file = os.path.join(dest_dir, os.path.basename(src_file))
+        print("_copy_file: copying %s as %s" % (src_file, dest_file))
 
         if os.path.islink(src_file):
+            # If the destinantion file exists as a link, unlink
+            if os.path.lexists(dest_file):
+                os.unlink(dest_file)
+
             # Step down one level of indirection
             linkto = os.readlink(src_file)
-            print("_copy_file(): %s links to %s" % (src_file, linkto))
+            linkto_dest = os.path.join(os.path.dirname(src_file), os.path.basename(linkto))
 
-            if not os.path.isabs(linkto):
-                linkto = os.path.join(os.path.split(src_file)[0], linkto)
+            print("%s links to %s (abs %s)" % (src_file, linkto, linkto_dest))
 
             # Recurse and get the link target
-            dest = self._copy_file(linkto, dest_dir, verbose)
-            dest_link = os.path.join(dest_dir, os.path.basename(src_file))
-
-            if dest != dest_link:
-                subprocess.call("ln -sf {} {}".format(dest, dest_link), shell=True)
-                print("_copy_file(): linked %s to %s" % (dest_link, dest))
-
-            return dest_link
-        else:
-            dest_file = os.path.join(dest_dir, os.path.basename(src_file))
-            print("_copy_file(): copying %s as %s" % (src_file, dest_file))
-
-            copy_str = "cp -f {} {}".format(src_file, dest_file)
-            print("_copy_file(): invoking shell [{}]".format(copy_str))
-            subprocess.call(copy_str, shell=True)
-            print("Returning %s" % (dest_file))
+            dest = self._copy_file(linkto_dest, dest_dir, verbose)
+            os.symlink(dest, os.path.join(dest_dir, os.path.basename(src_file)))
 
             return dest_file
+        else:
+            if not os.path.exists(dest_file):
+                shutil.copy(src_file, dest_dir)
 
-    ################################################################################################################
-    #
-    ################################################################################################################
-    def _find_file(self, src_dir: str, file_name: str) -> str:
-        print("_find_file(): looking for file {} under {}".format(file_name, src_dir))
-        for root, dirs, files in os.walk(src_dir):
-            if file_name in files:
-                found_file = os.path.join(root, file_name)
-                print("_find_file(): found file, returning {}".format(found_file))
-                return found_file
-        return None
+            print("Returning %s" % (dest_file))
+            return dest_file
 
     ################################################################################################################
     #
@@ -267,9 +350,16 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
+    def build_requirements(self):
+        if not tools.which("bazel"):
+            self.build_requires("bazel_installer/0.29.1@bincrafters/stable")
+
+    ################################################################################################################
+    #
+    ################################################################################################################
     def config_options(self):
         if self.settings.os == "Windows":
-            del self.options.fPIC
+            del self.options.fPI
 
     ################################################################################################################
     #
@@ -284,65 +374,6 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
-    def _add_lib_to_env(self, dependency_name: str, tf_lib_name: str, env_build: dict):
-        lib_root_path = self.deps_cpp_info[dependency_name].rootpath
-
-        tf_syslibs_env_var = "TF_SYSTEM_LIBS"
-        if tf_syslibs_env_var in env_build:
-            env_build[tf_syslibs_env_var] += "," + format(tf_lib_name)
-        else:
-            env_build[tf_syslibs_env_var] = tf_lib_name
-
-        env_build[tf_lib_name + "_PREFIX"] = lib_root_path
-        env_build[tf_lib_name + "_LIBDIR"] = os.path.join(lib_root_path, "lib")
-        env_build[tf_lib_name + "_INCLUDEDIR"] = os.path.join(lib_root_path, "include")
-
-    ################################################################################################################
-    # We need to patch a few files until they are merged into the TF baseline
-    ################################################################################################################
-    def _patch_tf_files(self):
-        source_folder = os.path.join(self.build_folder, self._source_subfolder)
-
-        with tools.chdir(source_folder):
-            # configure.py
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "configure.py.patch"))
-            print(
-                "Build folder = {}, source is in {}, patch is {}".format(self.build_folder, source_folder, patch_file)
-            )
-
-            print("Applying patch {}".format(patch_file))
-            tools.patch(patch_file=patch_file)
-
-            # Boringssl
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "boringssl.BUILD.patch"))
-            print("Applying patch {}".format(patch_file))
-            tools.patch(patch_file=patch_file)
-
-            # Protobuf
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "protobuf.BUILD.patch"))
-            print("Applying patch {}".format(patch_file))
-            tools.patch(patch_file=patch_file)
-
-            # Grpc
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "grpc.BUILD.patch"))
-            print("Applying patch {}".format(patch_file))
-            tools.patch(patch_file=patch_file)
-
-            # Aws Crypto
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "aws_crypto.cc.patch"))
-            print("Applying patch {}".format(patch_file))
-            tools.patch(patch_file=patch_file)
-
-            # Jsoncpp if needed
-            patching_jsoncpp = False
-            if patching_jsoncpp:
-                patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "jsoncpp.BUILD.patch"))
-                print("Applying patch {}".format(patch_file))
-                tools.patch(patch_file=patch_file)
-
-    ################################################################################################################
-    #
-    ################################################################################################################
     def build(self):
         with tools.chdir(self._source_subfolder):
             env_build = dict()
@@ -351,6 +382,12 @@ class TensorFlowConan(ConanFile):
 
             env_build["TF_NEED_GCP"] = "1" if self.options.need_gcp else "0"
             env_build["TF_NEED_CUDA"] = "1" if self.options.need_cuda else "0"
+            # If we want to use CUDA, we need the following environment variables set:
+            # CUDA_TOOLKIT_PATH
+            # CUDNN_INSTALL_PATH
+            # TF_CUDA_VERSION
+            # TF_CUDA_COMPUTE_CAPABILITIES
+            # TF_CUDNN_VERSION
             env_build["TF_DOWNLOAD_CLANG"] = "0"
             env_build["TF_NEED_HDFS"] = "1" if self.options.need_hdfs else "0"
             env_build["TF_NEED_OPENCL"] = "1" if self.options.need_opencl else "0"
@@ -375,14 +412,6 @@ class TensorFlowConan(ConanFile):
             env_build["TF_CONFIGURE_IOS"] = "1" if self.settings.os == "iOS" else "0"
             env_build["TF_SET_ANDROID_WORKSPACE"] = "1" if self.options.set_android_workspace else "0"
             env_build["TF_CONFIGURE_APPLE_BAZEL_RULES"] = "1"
-
-            # We want TF to use our versions of openssl, protobuf, and grpc
-            self._add_lib_to_env("protobuf", "@com_google_protobuf", env_build)
-            self._add_lib_to_env("grpc", "grpc", env_build)
-            self._add_lib_to_env("OpenSSL", "boringssl", env_build)
-
-            # Patch the configure script and other files
-            self._patch_tf_files()
 
             with tools.environment_append(env_build):
                 self.run("python configure.py" if tools.os_info.is_windows else "./configure")
@@ -411,76 +440,63 @@ class TensorFlowConan(ConanFile):
                 if self.options.need_cuda == True:
                     bazel_config_flags += "--config=cuda"
 
-                if self.options.need_aws == False:
-                    bazel_config_flags += "--config=noaws "
-
-                if self.options.need_gcp == False:
-                    bazel_config_flags += "--config=nogcp "
-
-                if self.options.need_hdfs == False:
-                    bazel_config_flags += "--config=nohdfs "
+                os_name = str(self.settings.os).lower()
 
                 optim_flags = ""
                 safe_flags = ""
-                os_name = str(self.settings.os).lower()
-
                 if os_name == "macos":
                     optim_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-msse4.1 --copt=-msse4.2"
-                    safe_flags = "-c opt --copt=-march=native"
+                    safe_flags = ""
                 elif os_name == "linux":
                     optim_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
-                    safe_flags = "-c opt"
+                    safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
                 elif os_name == "windows":
-                    optim_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
+                    opt_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
                     safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
 
-                bazel_config_flags += optim_flags if self.options.build_optimized else safe_flags
+                bazel_config_flags = optim_flags if self.options.build_optimized else safe_flags
 
-                # This is a shite, ugly hack. Linking with devtoolset on Bazel is jacked: we need to link stdc++ statically
-                # https://github.com/bazelbuild/bazel/issues/10327
-                static_link_stdcpp = False
-                if (os_name == "linux") and (
-                    subprocess.check_output(["gcc", "-v"], encoding="UTF-8", stderr=subprocess.STDOUT).find(
-                        "devtoolset"
-                    )
-                    != -1
-                ):
-                    print("build(): linking stdcpp statically on platform {}".format(platform.platform()))
-                    static_link_stdcpp = True
+                try:
+                    print("Attempting to build libtensorflow_cc BEFORE patch")
+                    self._build_bazel_target(bazel_config_flags, "//tensorflow:libtensorflow_cc.so")
+                except Exception as inst:
+                    print("Exception caught building libtensorflow_cc, attempting to PATCH")
+                    print(inst)
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow:libtensorflow_cc.so", static_link_stdcpp)
+                    if self._grpc_version < Version("1.22.0"):
+                        # Patch gRPC before proceeding
+                        # TF uses OLD versions: gRPC V1.19.1 and protobuf 3.8.0
+                        self._patch_grpc(self._bazel_cache_dir)
+                    else:
+                        # Fix up the gRPC version
+                        self._fix_grpc_version()
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow:libtensorflow.so", static_link_stdcpp)
+                    self._build_bazel_target(bazel_config_flags, "//tensorflow:libtensorflow_cc.so")
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow/core:tensorflow", static_link_stdcpp)
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/core:tensorflow")
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow/c:c_api", static_link_stdcpp)
+                self._build_bazel_target(bazel_config_flags, "//tensorflow:libtensorflow.so")
 
-                self._build_bazel_target(
-                    bazel_config_flags, "//tensorflow:libtensorflow_framework.so", static_link_stdcpp
-                )
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/c:c_api")
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow/java:libtensorflow_jni", static_link_stdcpp)
+                self._build_bazel_target(bazel_config_flags, "//tensorflow:libtensorflow_framework.so")
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow/java:tensorflow", static_link_stdcpp)
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/java:tensorflow")
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/java:libtensorflow_jni")
 
-                self._build_bazel_target(
-                    bazel_config_flags, "//tensorflow/core:framework_internal_impl", static_link_stdcpp
-                )
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/core:framework_internal_impl")
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/core:tensorflow")
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/cc:cc_ops")
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow/cc:cc_ops", static_link_stdcpp)
-
-                self._build_bazel_target(bazel_config_flags, "//tensorflow/cc:client_session", static_link_stdcpp)
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/cc:client_session")
 
                 self._build_bazel_target(
-                    bazel_config_flags, "//tensorflow/tools/graph_transforms:transform_utils", static_link_stdcpp
+                    bazel_config_flags, "//tensorflow/tools/graph_transforms:transform_utils",
                 )
 
-                self._build_bazel_target(
-                    bazel_config_flags, "//tensorflow/tools/graph_transforms:file_utils", static_link_stdcpp
-                )
+                self._build_bazel_target(bazel_config_flags, "//tensorflow/tools/graph_transforms:file_utils")
 
-                self._build_bazel_target(bazel_config_flags, "//tensorflow:install_headers", static_link_stdcpp)
+                self._build_bazel_target(bazel_config_flags, "//tensorflow:install_headers")
         return
 
     ################################################################################################################
@@ -514,21 +530,6 @@ class TensorFlowConan(ConanFile):
                 dest_dir=lib_dir,
                 search_patterns=["*.so", "*.dylib", "*.params"],
             )
-
-            os_name = str(self.settings.os).lower()
-            if self.options.need_mkl:
-                lib_ext = "dylib" if os_name == "macos" else "so"
-                mkl_lib_name = (
-                    "libmklml.{}".format(lib_ext) if os_name == "macos" else "libmklml_intel.{}".format(lib_ext)
-                )
-                mkl_lib = self._find_file(bazel_bin_directory, mkl_lib_name)
-                if mkl_lib is not None:
-                    self._copy_file(mkl_lib, lib_dir)
-
-                iomp_lib_name = "libiomp5.{}".format(lib_ext)
-                iomp_lib = self._find_file(bazel_bin_directory, iomp_lib_name)
-                if iomp_lib is not None:
-                    self._copy_file(iomp_lib, lib_dir)
 
             src_includes_dir = os.path.join(bazel_bin_directory, "tensorflow", "include")
             print("Copying absl includes")

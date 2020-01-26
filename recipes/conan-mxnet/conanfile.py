@@ -6,8 +6,8 @@ class MxnetConan(ConanFile):
     name = "mxnet"
     version = "1.5.1"
     license = "Apache 2.0"
-    url = "https://github.com/apache/incubator-mxnet"
-    homepage = "https://github.com/forwardmeasure/conan"
+    homepage = "https://github.com/apache/incubator-mxnet"
+    url = "https://github.com/forwardmeasure/conan"
     description = "Conan package for the MXNet machine learning library"
     settings = "os", "compiler", "build_type", "arch"
     options = {
@@ -63,7 +63,7 @@ class MxnetConan(ConanFile):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
             "git clone {}.git {} && cd {} && " "git checkout {} && git submodule update --init --recursive"
-        ).format(self.url, self._source_subfolder, self._source_subfolder, self.version)
+        ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
 
     def _configure_cmake(self):

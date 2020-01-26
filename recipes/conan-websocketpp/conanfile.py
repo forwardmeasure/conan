@@ -29,7 +29,7 @@ class ConanWebsocketpp(ConanFile):
     zlib_reference = "zlib/1.2.11@conan/stable"
     boost_reference = "boost/1.69.0@conan/stable"
     asio_reference = "asio/1.13.0@conan/stable"
-    openssl_reference = "OpenSSL/1.1.1c@conan/stable"
+    openssl_reference = "OpenSSL/1.1.1d@forwardmeasure/stable"
 
     def requirements(self):
         self.requires.add(self.openssl_reference)

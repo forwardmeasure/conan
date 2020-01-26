@@ -11,21 +11,21 @@
 	cctz/2.3@bincrafters/stable
 	boost/1.69.0@conan/stable
 	c-ares/1.15.0@conan/stable
-	OpenSSL/1.1.1c@conan/stable
+	OpenSSL/1.1.1d@forwardmeasure/stable
 	Catch2/2.10.2@catchorg/stable
-	xtl/0.6.8@forwardmeasure/stable
+	xtl/0.6.11@forwardmeasure/stable
 	xframe/0.2.0@forwardmeasure/stable
-	xtensor/0.20.10@forwardmeasure/stable
-	xtensor-io/0.8.0@forwardmeasure/stable
+	xtensor/0.21.2@forwardmeasure/stable
+	xtensor-io/0.9.0@forwardmeasure/stable
 	cpprestsdk/2.10.14@forwardmeasure/stable
 	websocketpp/0.8.1@forwardmeasure/stable
 	gtest/1.8.1@bincrafters/stable
 	fmt/6.0.0@bincrafters/stable
-	outcome/master@forwardmeasure/stable
+	outcome/2.1.2@forwardmeasure/stable
 	protobuf/3.8.0@forwardmeasure/stable
-	grpc/1.19.1@forwardmeasure/stable
+	grpc/1.26.0@forwardmeasure/stable
 	tensorflow/2.1.0@forwardmeasure/stable
-	onnx/1.6.0@forwardmeasure/stable
+	ONNX/1.6.0@forwardmeasure/stable
 	Poco/1.9.4@pocoproject/stable
     libtorch/1.3.1@forwardmeasure/stable
     openexr/2.4.0@forwardmeasure/stable
@@ -35,7 +35,6 @@
     jemalloc/5.2.1@forwardmeasure/stable
     mxnet/1.5.1@forwardmeasure/stable
     xgboost/0.90@forwardmeasure/stable
-
 [generators]
     cmake
     cmake_multi

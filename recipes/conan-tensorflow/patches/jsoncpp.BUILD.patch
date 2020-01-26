@@ -1,0 +1,35 @@
+diff --git a/third_party/systemlibs/jsoncpp.BUILD b/third_party/systemlibs/jsoncpp.BUILD
+index 7d54f9289b..a236fc02d1 100644
+--- a/third_party/systemlibs/jsoncpp.BUILD
++++ b/third_party/systemlibs/jsoncpp.BUILD
+@@ -5,7 +5,7 @@ filegroup(
+     visibility = ["//visibility:public"],
+ )
+ 
+-HEADERS = [
++JSONCPP_HEADERS = [
+     "include/json/allocator.h",
+     "include/json/assertions.h",
+     "include/json/autolink.h",
+@@ -21,18 +21,18 @@ HEADERS = [
+ 
+ genrule(
+     name = "link_headers",
+-    outs = HEADERS,
++    outs = JSONCPP_HEADERS,
+     cmd = """
+       for i in $(OUTS); do
+         i=$${i##*/}
+-        ln -sf $(INCLUDEDIR)/jsoncpp/json/$$i $(@D)/include/json/$$i
++        ln -sf $(jsoncpp_INCLUDEDIR)/jsoncpp/json/$$i $(@D)/include/json/$$i
+       done
+     """,
+ )
+ 
+ cc_library(
+     name = "jsoncpp",
+-    hdrs = HEADERS,
++    hdrs = JSONCPP_HEADERS,
+     includes = ["."],
+     linkopts = ["-ljsoncpp"],
+     visibility = ["//visibility:public"],

@@ -6,7 +6,7 @@ from conans.model.version import Version
 
 class grpcConan(ConanFile):
     name = "grpc"
-    version = "1.19.1"
+    version = "1.26.0"
     description = "Google's RPC library and framework."
     topics = ("conan", "grpc", "rpc")
     url = "https://github.com/inexorgame/conan-grpc"
@@ -42,7 +42,7 @@ class grpcConan(ConanFile):
 
     requires = (
         "zlib/1.2.11@conan/stable",
-        "OpenSSL/1.1.1c@conan/stable",
+        "OpenSSL/1.1.1d@forwardmeasure/stable",
         "protobuf/3.8.0@forwardmeasure/stable",
         "c-ares/1.15.0@conan/stable",
     )
@@ -60,11 +60,9 @@ class grpcConan(ConanFile):
         archive_url = "https://github.com/grpc/grpc/archive/v{}.zip".format(
             self.version
         )
-        # V1.25.0     sha256="82de7c3754df7be44c65fd00decd5e2351ea64e4d21fdaf6d76cea5676f954e8"
-        # V1.19.1     sha256="1efc6ee83ea0f1205a6f7b30db2bb1463fbe00016563ffa9e944d32b612197cb",
         tools.get(
             archive_url,
-            sha256="1efc6ee83ea0f1205a6f7b30db2bb1463fbe00016563ffa9e944d32b612197cb",
+            sha256="b90b2328e8546065578cc7a2b354ba50461365e162d8745e539045b1ca040963",
         )
         os.rename("grpc-{!s}".format(self.version), self._source_subfolder)
 

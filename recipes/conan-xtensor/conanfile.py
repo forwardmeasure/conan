@@ -4,9 +4,10 @@
 from conans import ConanFile, tools
 import os
 
+
 class XtensorConan(ConanFile):
     name = "xtensor"
-    version = "0.20.10"
+    version = "0.21.2"
     author = "Prashanth Nandavanam<pn@forwardmeasure.com>"
     description = "A library meant for numerical analysis with multi-dimensional array expressions."
     license = 'BSD 3-Clause "New" or "Revised" License'
@@ -18,10 +19,10 @@ class XtensorConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
 
     source_subfolder = "source_subfolder"
-    requires = ("xtl/0.6.8@forwardmeasure/stable")
+    requires = "xtl/0.6.11@forwardmeasure/stable"
 
     def source(self):
-        tools.get("{0}/archive/{1}.tar.gz".format(self.homepage, self.version))
+        tools.get("{0}/archive/{1}.tar.gz".format(self.url, self.version))
         extracted_dir = self.name + "-" + self.version
         os.rename(extracted_dir, self.source_subfolder)
 

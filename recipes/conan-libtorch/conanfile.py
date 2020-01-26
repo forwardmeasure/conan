@@ -6,8 +6,8 @@ import os
 class LibtorchConan(ConanFile):
     name = "libtorch"
     version = "1.3.1"
-    url = "https://github.com/pytorch/pytorch"
-    homepage = "https://github.com/forwardmeasure/conan"
+    homepage = "https://github.com/pytorch/pytorch"
+    url = "https://github.com/forwardmeasure/conan"
     topics = ("conan", "ONNX", "neural networks")
     author = "Prashanth Nandavanam <pn@forwardmeasure.com>"
     description = "Tensors and Dynamic neural networks in Python with strong GPU acceleration"
@@ -132,7 +132,7 @@ class LibtorchConan(ConanFile):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
             "git clone {}.git {} && cd {} && " "git checkout v{} && git submodule update --init --recursive"
-        ).format(self.url, self._source_subfolder, self._source_subfolder, self.version)
+        ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
 
     def build_requirements(self):

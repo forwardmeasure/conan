@@ -18,7 +18,7 @@ class XframeConan(ConanFile):
     settings = "os", "arch", "compiler", "build_type"
 
     source_subfolder = "source_subfolder"
-    requires = ("xtl/0.6.8@forwardmeasure/stable")
+    requires = ("xtl/0.6.11@forwardmeasure/stable")
 
     def source(self):
         tools.get("{0}/archive/{1}.tar.gz".format(self.homepage, self.version))

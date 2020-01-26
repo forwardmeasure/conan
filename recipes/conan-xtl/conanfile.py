@@ -6,7 +6,7 @@ import os
 
 class ConanXtlConan(ConanFile):
     name = "xtl"
-    version = "0.6.8"
+    version = "0.6.11"
     author = "Prashanth Nandavanam<pn@forwardmeasure.com>"
     description = "Basic tools (containers, algorithms) used by other quantstack packages"
     license = 'BSD 3-Clause "New" or "Revised" License'                  

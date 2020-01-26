@@ -45,7 +45,7 @@ def configure_cmake_installer_arguments(arg_parser=None):
                             action="store",
                             dest="cmake_install_dir",
                             required=True)
-    arg_parser.add_argument("--cmake-build-directory",
+    arg_parser.add_argument("--cmake-build-dir",
                             help="The directory in which to download and install CMake",
                             action="store",
                             dest="cmake_build_dir",

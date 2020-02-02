@@ -1,29 +1,29 @@
 #!/bin/bash
 
+export CONAN_USER_HOME=${CONAN_USER_HOME:-/opt/conan}
+export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 COMPUTE_ENGINE="cpu"
-while getopts ":e" opt; do
+PROFILE_FILE="${SCRIPTS_DIR}/profiles/$(uname)-install-profile"
+
+while getopts "e:p:" opt; do
   case ${opt} in
      e)
-      echo "-e arg is $OPTARG !!!"
       COMPUTE_ENGINE=$(tr [A-Z] [a-z] <<< "$OPTARG")
       ;;
-      \?)
-      echo "Invalid option: $OPTARG" 1>&2
+     p)
+      PROFILE_FILE="${SCRIPTS_DIR}/profiles/$OPTARG"
       ;;
-    : )
+     \?)
+      echo "Invalid option: $OPTARG" 1>&2
+	  exit 1
+      ;;
+     : )
       echo "Invalid option: $OPTARG requires an argument" 1>&2
+	  exit 1
       ;;
   esac
 done
 shift $((OPTIND -1))
-
-if [ "x${COMPUTE_ENGINE}" == "x" ]
-then
-  COMPUTE_ENGINE="cpu"
-fi
-
-export CONAN_USER_HOME=${CONAN_USER_HOME:-/opt/conan}
-export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
 conan remote add bintray "https://conan.bintray.com" False --force
 conan remote add outcome https://api.bintray.com/conan/ned14/Outcome False --force
@@ -31,8 +31,6 @@ conan remote add bincrafters https://api.bintray.com/conan/bincrafters/public-co
 
 CONAN_CHANNEL=@forwardmeasure/stable
 BUILD_TYPE=Release
-PROFILE_FILE="${SCRIPTS_DIR}/profiles/$(uname)-install-profile"
-export CONAN_DEFAULT_PROFILE_PATH=${PROFILE_FILE}
 
 myName=$(basename $0)
 #################################################################################
@@ -61,5 +59,11 @@ CONAN_PROFILE_OPTIONS="--profile=${PROFILE_FILE}"
 CONAN_INSTALL_OPTIONS="--install-folder=${INSTALL_DIR} ${CONAN_BUILD_OPTIONS} ${CONAN_BUILD_CPP_OPTIONS} --build outdated"
 
 CONANFILE=${SCRIPTS_DIR}/conanfile-${COMPUTE_ENGINE}.txt
+
+#Ensure we are compiling with the CXX11 ABI by default
+conan profile update settings.compiler.libcxx=libstdc++11 default
+
 echo "Installing all conan components"
-conan install ${CONAN_PROFILE_OPTIONS} ${CONAN_INSTALL_OPTIONS} ${CONANFILE}
+runCmd="conan install ${CONAN_PROFILE_OPTIONS} ${CONAN_INSTALL_OPTIONS} ${CONANFILE}"
+echo "Running command ${runCmd}"
+eval ${runCmd}

@@ -4,5 +4,5 @@ GCC_PATH=/usr/bin
 
 [settings]
 	compiler=gcc
-	compiler.version=8
+	compiler.version=9
 	compiler.libcxx=libstdc++11

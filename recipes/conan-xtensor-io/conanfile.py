@@ -10,7 +10,9 @@ class ConanXtensorIoConan(ConanFile):
     name = "xtensor-io"
     version = "0.9.0"
     author = "Prashanth Nandavanam<pn@forwardmeasure.com>"
-    description = "Library for reading and writing image, sound and npz file formats to and from xtensor data structures."
+    description = (
+        "Library for reading and writing image, sound and npz file formats to and from xtensor data structures."
+    )
     license = 'BSD 3-Clause "New" or "Revised" License'
     exports = ["LICENSE.md"]
     exports_sources = []

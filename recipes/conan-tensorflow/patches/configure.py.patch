@@ -1,8 +1,8 @@
 diff --git a/configure.py b/configure.py
-index 8ec47294b4..d71eb85038 100644
+index 8ec47294b4..0aef89c8f3 100644
 --- a/configure.py
 +++ b/configure.py
-@@ -1186,14 +1186,22 @@ def set_system_libs_flag(environ_cp):
+@@ -1186,14 +1186,28 @@ def set_system_libs_flag(environ_cp):
        syslibs = ','.join(sorted(syslibs.split(',')))
      else:
        syslibs = ','.join(sorted(syslibs.split()))
@@ -23,13 +23,19 @@ index 8ec47294b4..d71eb85038 100644
 +    libdir = component + "_LIBDIR"
 +    includedir = component + "_INCLUDEDIR"
 +
-+    print("Setting up component {} as follows {}, {}, {}".format(component, prefix, libdir, includedir))
++    print("Setting up component {} as follows: {}, {}, {}".format(component, prefix, libdir, includedir))
 +    if prefix in environ_cp:
 +      write_to_bazelrc('build --define=%s=%s' % (prefix, environ_cp[prefix]))
++    else:
++        print("WARNING: prefix {} not found in environment".format(prefix))
 +    if libdir in environ_cp:
 +      write_to_bazelrc('build --define=%s=%s' % (libdir, environ_cp[libdir]))
++    else:
++        print("WARNING: libdir {} not found in environment".format(prefix))
 +    if includedir in environ_cp:
 +      write_to_bazelrc('build --define=%s=%s' % (includedir, environ_cp[includedir]))
++    else:
++        print("WARNING: includedir {} not found in environment".format(prefix))
  
  
  def is_reduced_optimize_huge_functions_available(environ_cp):

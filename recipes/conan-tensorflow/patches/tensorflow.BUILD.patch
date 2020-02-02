@@ -1,0 +1,20 @@
+diff --git a/tensorflow/BUILD b/tensorflow/BUILD
+index 2ccb985462..e09fc61f4c 100644
+--- a/tensorflow/BUILD
++++ b/tensorflow/BUILD
+@@ -661,6 +661,7 @@ tf_cc_shared_object(
+         "//tensorflow/c:exported_symbols.lds",
+         "//tensorflow/c:version_script.lds",
+         "//tensorflow/c/eager:c_api",
++        ":libtensorflow_framework_import_lib",
+         "//tensorflow/core:tensorflow",
+         "//tensorflow/core/distributed_runtime/rpc:grpc_session",
+     ],
+@@ -696,6 +697,7 @@ tf_cc_shared_object(
+         "//tensorflow/cc:client_session",
+         "//tensorflow/cc:scope",
+         "//tensorflow/cc/profiler",
++        ":libtensorflow_framework_import_lib",
+         "//tensorflow/core:tensorflow",
+     ] + if_ngraph(["@ngraph_tf//:ngraph_tf"]),
+ )

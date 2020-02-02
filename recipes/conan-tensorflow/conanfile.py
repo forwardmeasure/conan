@@ -30,6 +30,8 @@ class TensorFlowConan(ConanFile):
     options = {
         "shared": [True, False],
         "fPIC": [True, False],
+        "cuda_clang": [True, False],
+        "download_clang": [True, False],
         "build_optimized": [True, False],
         "build_monolithic": [True, False],
         "set_android_workspace": [True, False],
@@ -59,6 +61,8 @@ class TensorFlowConan(ConanFile):
     default_options = {
         "shared": True,
         "fPIC": True,
+        "cuda_clang": False,
+        "download_clang": False,
         "build_optimized": True,
         "build_monolithic": False,
         "build_dynamic_kernels": False,
@@ -68,7 +72,7 @@ class TensorFlowConan(ConanFile):
         "need_hdfs": False,
         "need_opencl": False,
         "need_jemalloc": False,
-        "enable_xla": False,
+        "enable_xla": True,
         "need_verbs": False,
         "download_mkl": False,
         "need_mkl": True,
@@ -120,7 +124,7 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     def _build_bazel_target(self, bazel_config_flags, target, static_link_stdcpp):
         print(
-            "_build_bazel_target(): installing target with {} link".format(
+            "_build_bazel_target(): installing target {} with {} link".format(
                 target, "static" if static_link_stdcpp else "dynamic"
             )
         )
@@ -131,10 +135,13 @@ class TensorFlowConan(ConanFile):
             env_build["BAZEL_LINKLIBS"] = "-l%:libstdc++.a"
 
         with tools.environment_append(env_build):
-            self.run(
-                "bazel --output_user_root=%s --host_jvm_args=-Xms512M --host_jvm_args=-Xmx8192M build -s --jobs 12 --incompatible_no_support_tools_in_action_inputs=false --nodiscard_analysis_cache --keep_state_after_build --track_incremental_state --verbose_failures %s %s"
-                % (self._bazel_cache_dir, bazel_config_flags, target)
-            )
+            build_cmd = (
+                "bazel --output_user_root={} --host_jvm_args=-Xms512M --host_jvm_args=-Xmx8192M build -s --jobs 12"
+                " --incompatible_no_support_tools_in_action_inputs=false --nodiscard_analysis_cache --keep_state_after_build"
+                " --track_incremental_state --verbose_failures {} {}"
+            ).format(self._bazel_cache_dir, bazel_config_flags, target)
+            print("Running bazel command [{}]".format(build_cmd))
+            self.run(build_cmd)
 
     ################################################################################################################
     #
@@ -309,7 +316,11 @@ class TensorFlowConan(ConanFile):
             print(
                 "Build folder = {}, source is in {}, patch is {}".format(self.build_folder, source_folder, patch_file)
             )
+            print("Applying patch {}".format(patch_file))
+            tools.patch(patch_file=patch_file)
 
+            # Tensorflow
+            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "tensorflow.BUILD.patch"))
             print("Applying patch {}".format(patch_file))
             tools.patch(patch_file=patch_file)
 
@@ -350,17 +361,20 @@ class TensorFlowConan(ConanFile):
             env_build["USE_DEFAULT_PYTHON_LIB_PATH"] = "1"
 
             env_build["TF_NEED_GCP"] = "1" if self.options.need_gcp else "0"
-            env_build["TF_NEED_CUDA"] = "1" if self.options.need_cuda else "0"
-            env_build["TF_DOWNLOAD_CLANG"] = "0"
+            env_build["TF_NEED_CUDA"] = "1" if (self.options.need_cuda and not self.options.need_mkl) else "0"
+            env_build["TF_DOWNLOAD_CLANG"] = "1" if self.options.download_clang else "0"
+            env_build["TF_CUDA_CLANG"] = "1" if self.options.cuda_clang else "0"
             env_build["TF_NEED_HDFS"] = "1" if self.options.need_hdfs else "0"
             env_build["TF_NEED_OPENCL"] = "1" if self.options.need_opencl else "0"
             env_build["TF_NEED_JEMALLOC"] = "1" if self.options.need_jemalloc else "0"
             env_build["TF_ENABLE_XLA"] = "1" if self.options.enable_xla else "0"
             env_build["TF_NEED_VERBS"] = "1" if self.options.need_verbs else "0"
             env_build["TF_DOWNLOAD_MKL"] = "1" if self.options.download_mkl else "0"
-            env_build["TF_NEED_MKL"] = "1" if self.options.need_mkl else "0"
+            env_build["TF_NEED_MKL"] = "1" if (self.options.need_mkl and not self.options.need_cuda) else "0"
             env_build["TF_NEED_NGRAPH"] = "1" if self.options.need_ngraph else "0"
-            env_build["TF_NEED_AWS"] = "1" if self.options.need_aws else "0"
+            env_build["TF_NEED_AWS"] = (
+                "1" if self.options.need_aws else "0"
+            )  # Does not work if AWS is set and we are putting in our own SSL
             env_build["TF_NEED_MPI"] = "1" if self.options.need_mpi else "0"
             env_build["TF_NEED_GDR"] = "1" if self.options.need_gdr else "0"
             env_build["TF_NEED_S3"] = "1" if self.options.need_s3 else "0"
@@ -371,13 +385,17 @@ class TensorFlowConan(ConanFile):
             env_build["TF_NEED_IGNITE"] = "1" if self.options.need_ignite else "0"
             env_build["TF_NEED_ROCM"] = "1" if self.options.need_rocm else "0"
 
-            env_build["CC_OPT_FLAGS"] = "/arch:AVX" if self.settings.compiler == "Visual Studio" else "-march=native"
             env_build["TF_CONFIGURE_IOS"] = "1" if self.settings.os == "iOS" else "0"
             env_build["TF_SET_ANDROID_WORKSPACE"] = "1" if self.options.set_android_workspace else "0"
             env_build["TF_CONFIGURE_APPLE_BAZEL_RULES"] = "1"
+            env_build["CC_OPT_FLAGS"] = "-march=native -Wno-sign-compare"
+            env_build["GCC_HOST_COMPILER_PATH"] = (
+                tools.which("clang") if self.options.cuda_clang else tools.which("gcc")
+            )
+            env_build["HOST_CXX_COMPILER"] = tools.which("clang++") if self.options.cuda_clang else tools.which("g++")
 
             # We want TF to use our versions of openssl, protobuf, and grpc
-            self._add_lib_to_env("protobuf", "@com_google_protobuf", env_build)
+            self._add_lib_to_env("protobuf", "com_google_protobuf", env_build)
             self._add_lib_to_env("grpc", "grpc", env_build)
             self._add_lib_to_env("OpenSSL", "boringssl", env_build)
 
@@ -390,8 +408,8 @@ class TensorFlowConan(ConanFile):
 
                 bazel_config_flags = ""
 
-                if self.options.need_mkl:
-                    bazel_config_flags += "--config=mkl "
+                #                if (self.options.need_mkl and not self.options.need_cuda):
+                #                    bazel_config_flags += "--config=mkl "
 
                 if self.options.need_gdr:
                     bazel_config_flags += "--config=gdr "
@@ -408,8 +426,8 @@ class TensorFlowConan(ConanFile):
                 if self.options.build_dynamic_kernels:
                     bazel_config_flags += "--config=build_dynamic_kernels "
 
-                if self.options.need_cuda == True:
-                    bazel_config_flags += "--config=cuda"
+                #                if (self.options.need_cuda and not self.options.need_mkl):
+                #                    bazel_config_flags += "--config=cuda "
 
                 if self.options.need_aws == False:
                     bazel_config_flags += "--config=noaws "
@@ -439,12 +457,15 @@ class TensorFlowConan(ConanFile):
                 # This is a shite, ugly hack. Linking with devtoolset on Bazel is jacked: we need to link stdc++ statically
                 # https://github.com/bazelbuild/bazel/issues/10327
                 static_link_stdcpp = False
-                if (os_name == "linux") and (
-                    subprocess.check_output(["gcc", "-v"], encoding="UTF-8", stderr=subprocess.STDOUT).find(
-                        "devtoolset"
+                if (
+                    (os_name == "linux")
+                    and (
+                        subprocess.check_output(["gcc", "-v"], encoding="UTF-8", stderr=subprocess.STDOUT).find(
+                            "devtoolset"
+                        )
+                        != -1
                     )
-                    != -1
-                ):
+                ) or (self.options.need_cuda == True):
                     print("build(): linking stdcpp statically on platform {}".format(platform.platform()))
                     static_link_stdcpp = True
 

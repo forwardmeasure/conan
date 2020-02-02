@@ -4,10 +4,11 @@ ARG compute_engine_type=cpu
 ARG cmake_version=3.16.2
 ARG bazel_version=1.1.0
 ARG cuda_version=10.2
-ARG cudnn_version=7.6.5
+ARG cudnn_version=7.6
+ARG nccl_version=2.5
 
 LABEL version="1.0.0" \
-      description="Tensorflow C++ CUDA 10.2 Runtime Server"
+    description="Tensorflow C++ CUDA 10.2 Runtime Server"
 
 ENV CONAN_USER_HOME=/opt/conan \
     SW_BUILD_DIR=/opt/software/build \
@@ -16,25 +17,28 @@ ENV CONAN_USER_HOME=/opt/conan \
     BAZEL_SCRIPT=install_bazel.py \
     CUDA_SCRIPT=install_cuda.py \
     CUDNN_SCRIPT=install_cudnn.py \
+    NCCL_SCRIPT=install_nccl.py \
     COMPUTE_ENGINE_TYPE=$compute_engine_type \
     CMAKE_VERSION=$cmake_version \
     BAZEL_VERSION=$bazel_version \
     CUDA_VERSION=$cuda_version \
-    CUDNN_VERSION=$cudnn_version
+    CUDNN_VERSION=$cudnn_version \
+    NCCL_VERSION=$nccl_version
 
 ENV CMAKE_INSTALL_DIR=/opt/cmake/${CMAKE_VERSION} \
     BAZEL_INSTALL_DIR=/opt/google/bazel/${BAZEL_VERSION} \
     CUDA_HOME=/opt/nvidia/cuda-${CUDA_VERSION} \
     CUDNN_HOME=/opt/nvidia/cudnn-${CUDNN_VERSION} \
+    NCCL_HOME=/opt/nvidia/nccl-${NCCL_VERSION} \
     CONAN_BUILD_DIR=${SW_BUILD_DIR}/conan
 ENV PATH="$PATH:${CMAKE_INSTALL_DIR}/bin:${BAZEL_INSTALL_DIR}/bin"
 
 ENV LANG=en_US.UTF-8 \
-	LC_ALL=en_US.UTF-8
+    LC_ALL=en_US.UTF-8
 
 RUN dnf update -y; dnf clean all; dnf -y upgrade && \
     dnf install -y curl grep sed gcc gcc-c++ git wget unzip pkg-config \
-                   autoconf libtool tar cpio patch file golang python36
+    autoconf libtool tar cpio patch file golang glibc-langpack-en python36
 
 RUN mkdir -p ${SW_DOWNLOADS_DIR} ${CUDA_HOME} ${CUDNN_HOME}
 
@@ -63,7 +67,11 @@ RUN cd ${SW_DOWNLOADS_DIR} && python ./${CUDA_SCRIPT} --cuda-version=${CUDA_VERS
 # Install CUDNN
 RUN cd ${SW_DOWNLOADS_DIR} && python ./${CUDNN_SCRIPT} --cudnn-version=${CUDNN_VERSION} \
     --cudnn-install-dir=${CUDNN_HOME} \
-    --cudnn-build-dir=${SW_BUILD_DIR}/cudnn
+
+# Install NCCL
+RUN cd ${SW_DOWNLOADS_DIR} && python ./${NCCL_SCRIPT} --nccl-version=${NCCL_VERSION} \
+    --nccl-install-dir=${NCCL_HOME} \
+    --nccl-build-dir=${SW_BUILD_DIR}/nccl
 
 RUN echo "${CUDA_HOME}/lib64" >> /etc/ld.so.conf.d/nvidia.conf
 

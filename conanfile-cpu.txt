@@ -15,7 +15,7 @@
 	Catch2/2.10.2@catchorg/stable
 	xtl/0.6.11@forwardmeasure/stable
 	xframe/0.2.0@forwardmeasure/stable
-	xtensor/0.21.2@forwardmeasure/stable
+	xtensor/0.21.3@forwardmeasure/stable
 	xtensor-io/0.9.0@forwardmeasure/stable
 	cpprestsdk/2.10.14@forwardmeasure/stable
 	websocketpp/0.8.1@forwardmeasure/stable
@@ -26,8 +26,8 @@
 	grpc/1.26.0@forwardmeasure/stable
 	tensorflow/2.1.0@forwardmeasure/stable
 	ONNX/1.6.0@forwardmeasure/stable
-	Poco/1.9.4@pocoproject/stable
-    libtorch/1.3.1@forwardmeasure/stable
+	Poco/1.10.0@pocoproject/stable
+    libtorch/1.4.0@forwardmeasure/stable
     openexr/2.4.0@forwardmeasure/stable
     opencv/4.2.0@forwardmeasure/stable
     openblas/0.3.7@forwardmeasure/stable
@@ -67,3 +67,5 @@
     libtorch:enable_parallel_build=True
     libtorch:use_tbb=False
     libtorch:use_distributed=True
+    libtorch:build_custom_protobuf=False
+    libtorch:use_cuda=False

@@ -5,7 +5,7 @@ import os
 
 class LibtorchConan(ConanFile):
     name = "libtorch"
-    version = "1.3.1"
+    version = "1.4.0"
     homepage = "https://github.com/pytorch/pytorch"
     url = "https://github.com/forwardmeasure/conan"
     topics = ("conan", "ONNX", "neural networks")
@@ -36,6 +36,8 @@ class LibtorchConan(ConanFile):
         "build_test": [True, False],
         "use_asan": [True, False],
         "use_cuda": [True, False],
+        "use_cudnn": [True, False],
+        "use_static_cudnn": [True, False],
         "use_rocm": [True, False],
         "use_fbgemm": [True, False],
         "use_ffmpeg": [True, False],
@@ -85,6 +87,8 @@ class LibtorchConan(ConanFile):
         "build_test": False,
         "use_asan": False,
         "use_cuda": False,
+        "use_cudnn": False,
+        "use_static_cudnn": False,
         "use_rocm": False,
         "use_fbgemm": True,
         "use_ffmpeg": False,
@@ -151,9 +155,9 @@ class LibtorchConan(ConanFile):
 
         env_build = dict()
         # Not sure why the build breaks becasue of missing defs for CAFFE2_PERF_WITH_AVX, etc. so just adding these for now
-        env_build["CAFFE2_PERF_WITH_AVX"] = "ON"
-        env_build["CAFFE2_PERF_WITH_AVX2"] = "ON"
-        env_build["CAFFE2_PERF_WITH_AVX512"] = "ON"
+        #       env_build["CAFFE2_PERF_WITH_AVX"] = "ON"
+        #       env_build["CAFFE2_PERF_WITH_AVX2"] = "ON"
+        #       env_build["CAFFE2_PERF_WITH_AVX512"] = "ON"
 
         with tools.environment_append(env_build):
             cmake = (
@@ -167,9 +171,9 @@ class LibtorchConan(ConanFile):
             cmake.verbose = True
 
             # Not sure why the build breaks becasue of missing defs for CAFFE2_PERF_WITH_AVX, etc. so just adding these for now
-            cmake.definitions["CAFFE2_PERF_WITH_AVX"] = "ON"
-            cmake.definitions["CAFFE2_PERF_WITH_AVX2"] = "ON"
-            cmake.definitions["CAFFE2_PERF_WITH_AVX512"] = "ON"
+            #           cmake.definitions["CAFFE2_PERF_WITH_AVX"] = "ON"
+            #           cmake.definitions["CAFFE2_PERF_WITH_AVX2"] = "ON"
+            #           cmake.definitions["CAFFE2_PERF_WITH_AVX512"] = "ON"
 
             cmake.definitions["BUILD_SHARED_LIBS"] = "ON" if self.options.shared else "OFF"
             cmake.definitions["ATEN_NO_TEST"] = "ON" if self.options.aten_no_test else "OFF"
@@ -183,7 +187,17 @@ class LibtorchConan(ConanFile):
             cmake.definitions["BUILD_NAMEDTENSOR"] = "ON" if self.options.build_named_tensor else "OFF"
             cmake.definitions["BUILD_TEST"] = "ON" if self.options.build_test else "OFF"
             cmake.definitions["USE_ASAN"] = "ON" if self.options.use_asan else "OFF"
-            cmake.definitions["USE_CUDA"] = "ON" if self.options.use_cuda else "OFF"
+
+            # CUDA
+            cmake.definitions["USE_CUDA"] = "OFF"
+            cmake.definitions["USE_CUDNN"] = "OFF"
+            cmake.definitions["USE_STATIC_CUDNN"] = "OFF"
+            if self.options.use_cuda:
+                cmake.definitions["USE_CUDA"] = "ON"
+                if self.options.use_cudnn:
+                    cmake.definitions["USE_CUDNN"] = "ON"
+                    cmake.definitions["USE_STATIC_CUDNN"] = "ON" if self.options.use_static_cudnn else "OFF"
+
             cmake.definitions["USE_ROCM"] = "ON" if self.options.use_rocm else "OFF"
             cmake.definitions["USE_FBGEMM"] = "ON" if self.options.use_fbgemm else "OFF"
             cmake.definitions["USE_GFLAGS"] = "ON" if self.options.use_gflags else "OFF"

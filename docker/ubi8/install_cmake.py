@@ -11,11 +11,11 @@ import subprocess
 def get_cmake_installer_file_name(version):
     uname = platform.system().lower().capitalize()
     arch = platform.machine()
-    return "cmake-%s-%s-%s.tar.gz" % (version, uname, arch)
+    return "cmake-{}-{}-{}.tar.gz".format(version, uname, arch)
 
 
 def get_cmake_download_location(version, installer_script):
-    return "https://github.com/Kitware/CMake/releases/download/v%s/%s" % (version, installer_script)
+    return "https://github.com/Kitware/CMake/releases/download/v{}/{}".format(version, installer_script)
 
 
 def download_cmake(build_dir, file_name, download_url):
@@ -27,7 +27,7 @@ def download_cmake(build_dir, file_name, download_url):
 def install_cmake(build_dir, install_script, install_dir):
     os.chdir(build_dir)
     install_script_full = os.getcwd() + os.sep + install_script
-    logging.info("[%s]" % install_script_full)
+    logging.info("[{}]".formatinstall_script_full)
     subprocess.run(["tar", "-zxvf", install_script_full, "-C", install_dir, "--strip-components=1"])
 
 
@@ -54,12 +54,12 @@ def configure_cmake_installer_arguments(arg_parser=None):
 
 
 def download_and_install_cmake(version, build_dir, install_dir):
-    logging.info("Installing CMake version %s in directory %s" % (version, build_dir))
+    logging.info("Installing CMake version {} in directory {}".format(version, build_dir))
 
     _installer_archive = get_cmake_installer_file_name(version)
     _download_url = get_cmake_download_location(version, _installer_archive)
 
-    logging.info("Downloading %s from %s" % (_installer_archive, _download_url))
+    logging.info("Downloading {} from {}".format(_installer_archive, _download_url))
 
     os.makedirs(install_dir, mode=0o755, exist_ok=True)
     os.makedirs(build_dir, mode=0o755, exist_ok=True)

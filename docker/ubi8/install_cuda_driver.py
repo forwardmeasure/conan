@@ -22,13 +22,6 @@ def configure_cuda_installer_arguments(arg_parser=None):
         required=True,
     )
     arg_parser.add_argument(
-        "--cuda-install-dir",
-        help="The directory in which you want to install cuda",
-        action="store",
-        dest="cuda_install_dir",
-        required=True,
-    )
-    arg_parser.add_argument(
         "--cuda-build-dir",
         help="The directory in which to download and install cuda",
         action="store",
@@ -57,25 +50,24 @@ def download_cuda(build_dir, download_url):
     subprocess.Popen(["/bin/bash", "-c", download_cmd]).communicate()
 
 
-def install_cuda(build_dir, install_script, install_dir):
+def install_cuda(build_dir, install_script):
     os.chdir(build_dir)
-    install_cmd = "cd {} && bash {} --override --no-opengl-libs --silent --toolkit --toolkitpath={} --defaultroot={}".format(
-        build_dir, os.path.join(os.getcwd(), install_script), install_dir, install_dir
+    install_cmd = "cd {} && bash {} --override --no-opengl-libs --silent --driver".format(
+        build_dir, os.path.join(os.getcwd(), install_script)
     )
     logging.info("Running {}".format(install_cmd))
     subprocess.Popen(["/bin/bash", "-c", install_cmd]).communicate()
 
 
-def download_and_install_cuda(version, build_dir, install_dir):
-    logging.info("Installing cuda version %s in directory %s" % (version, install_dir))
+def download_and_install_cuda(version, build_dir):
+    logging.info("Installing cuda version {}".format (version))
 
     (installer, download_url) = get_cuda_download_location(version)
 
-    os.makedirs(install_dir, mode=0o755, exist_ok=True)
     os.makedirs(build_dir, mode=0o755, exist_ok=True)
 
     download_cuda(build_dir, download_url)
-    install_cuda(build_dir, installer, install_dir)
+    install_cuda(build_dir, installer)
 
 
 if __name__ == "__main__":
@@ -83,4 +75,4 @@ if __name__ == "__main__":
 
     parser = configure_cuda_installer_arguments()
     cmd_line_args = parser.parse_args()
-    download_and_install_cuda(cmd_line_args.cuda_version, cmd_line_args.cuda_build_dir, cmd_line_args.cuda_install_dir)
+    download_and_install_cuda(cmd_line_args.cuda_version, cmd_line_args.cuda_build_dir)

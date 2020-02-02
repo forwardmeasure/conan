@@ -11,11 +11,11 @@ import subprocess
 def get_bazel_installer_file_name(version):
     uname = platform.system().lower()
     arch = platform.machine()
-    return "bazel-%s-installer-%s-%s.sh" % (version, uname, arch)
+    return "bazel-{}-installer-{}-{}.sh".format(version, uname, arch)
 
 
 def get_bazel_download_location(version, installer_script):
-    return "https://github.com/bazelbuild/bazel/releases/download/%s/%s" % (version, installer_script)
+    return "https://github.com/bazelbuild/bazel/releases/download/{}/{}".format(version, installer_script)
 
 
 def download_bazel(build_dir, file_name, download_url):
@@ -28,7 +28,7 @@ def install_bazel(build_dir, install_script, install_dir):
     os.chdir(build_dir)
     install_script_full = os.getcwd() + os.sep + install_script
     os.chmod(install_script_full, 0o744)
-    subprocess.run([install_script_full, "--prefix=%s" % install_dir])
+    subprocess.run([install_script_full, "--prefix={}".formatinstall_dir])
 
 
 def configure_bazel_installer_arguments(arg_parser=None):
@@ -57,14 +57,14 @@ def download_and_install_bazel(version, build_dir, install_dir):
     _installer_script = get_bazel_installer_file_name(version)
     _download_url = get_bazel_download_location(version, _installer_script)
 
-    logging.info("Downloading %s from %s" % (_installer_script, _download_url))
+    logging.info("Downloading {} from {}".format(_installer_script, _download_url))
 
     os.makedirs(install_dir, mode=0o755, exist_ok=True)
     os.makedirs(build_dir, mode=0o755, exist_ok=True)
 
     download_bazel(build_dir, _installer_script, _download_url)
 
-    logging.info("Installing Bazel version %s in directory %s" % (version, build_dir))
+    logging.info("Installing Bazel version {} in directory {}".format(version, build_dir))
     install_bazel(build_dir, _installer_script, install_dir)
 
 

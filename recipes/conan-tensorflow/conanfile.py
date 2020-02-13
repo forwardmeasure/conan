@@ -17,7 +17,7 @@ from conans.model.version import Version
 class TensorFlowConan(ConanFile):
     name = "tensorflow"
     version = "2.1.0"
-    folder_name = name + ("_%s" % version.replace(".", "_"))
+    folder_name = name + ("_{}".formatversion.replace(".", "_"))
     homepage = "https://github.com/tensorflow/tensorflow"
     topics = ("conan", "tensorflow", "Machine Learning", "Neural Networks")
     url = "https://github.com/forwardmeasuyre/conan"
@@ -147,18 +147,18 @@ class TensorFlowConan(ConanFile):
     #
     ################################################################################################################
     def _copy_file(self, src_file: str, dest_dir: str, verbose=True) -> str:
-        print("_copy_file(): copying %s to %s" % (src_file, dest_dir))
+        print("_copy_file(): copying {} to {}".format(src_file, dest_dir))
 
         if src_file is None:
-            print("_copy_file(): cannot process null source %s" % (src_file))
+            print("_copy_file(): cannot process null source {}".format(src_file))
             return None
 
         if dest_dir is None:
-            print("_copy_file(): cannot process null source %s" % (dest_dir))
+            print("_copy_file(): cannot process null source {}".format(dest_dir))
             return None
 
         if not os.path.isfile(src_file) and not os.path.islink(src_file):
-            print("_copy_file(): source %s must be a file or link" % (src_file))
+            print("_copy_file(): source {} must be a file or link".format(src_file))
             return None
 
         if not os.path.isdir(dest_dir):
@@ -168,7 +168,7 @@ class TensorFlowConan(ConanFile):
         if os.path.islink(src_file):
             # Step down one level of indirection
             linkto = os.readlink(src_file)
-            print("_copy_file(): %s links to %s" % (src_file, linkto))
+            print("_copy_file(): {} links to {}".format(src_file, linkto))
 
             if not os.path.isabs(linkto):
                 linkto = os.path.join(os.path.split(src_file)[0], linkto)
@@ -179,17 +179,17 @@ class TensorFlowConan(ConanFile):
 
             if dest != dest_link:
                 subprocess.call("ln -sf {} {}".format(dest, dest_link), shell=True)
-                print("_copy_file(): linked %s to %s" % (dest_link, dest))
+                print("_copy_file(): linked {} to {}".format(dest_link, dest))
 
             return dest_link
         else:
             dest_file = os.path.join(dest_dir, os.path.basename(src_file))
-            print("_copy_file(): copying %s as %s" % (src_file, dest_file))
+            print("_copy_file(): copying {} as {}".format(src_file, dest_file))
 
             copy_str = "cp -f {} {}".format(src_file, dest_file)
             print("_copy_file(): invoking shell [{}]".format(copy_str))
             subprocess.call(copy_str, shell=True)
-            print("Returning %s" % (dest_file))
+            print("Returning {}".format(dest_file))
 
             return dest_file
 
@@ -235,12 +235,12 @@ class TensorFlowConan(ConanFile):
                 search_patterns = ["*.so", "*.dylib"]
 
             print(
-                "_copy_tf_libs(): copying file matching patterns %s from %s to %s"
-                % (str(search_patterns), src_dir, dest_dir)
+                "_copy_tf_libs(): copying file matching patterns {} from {} to {}"
+               .format(str(search_patterns), src_dir, dest_dir)
             )
 
             for f in self._find_files(src_dir=src_dir, search_patterns=search_patterns):
-                print("Copying %s to %s" % (f, dest_dir))
+                print("Copying {} to {}".format(f, dest_dir))
                 self._copy_file(f, dest_dir, verbose=True)
 
         except Exception as inst:
@@ -457,15 +457,12 @@ class TensorFlowConan(ConanFile):
                 # This is a shite, ugly hack. Linking with devtoolset on Bazel is jacked: we need to link stdc++ statically
                 # https://github.com/bazelbuild/bazel/issues/10327
                 static_link_stdcpp = False
-                if (
-                    (os_name == "linux")
-                    and (
-                        subprocess.check_output(["gcc", "-v"], encoding="UTF-8", stderr=subprocess.STDOUT).find(
-                            "devtoolset"
-                        )
-                        != -1
+                if (os_name == "linux") and (
+                    subprocess.check_output(["gcc", "-v"], encoding="UTF-8", stderr=subprocess.STDOUT).find(
+                        "devtoolset"
                     )
-                ) or (self.options.need_cuda == True):
+                    != -1
+                ):
                     print("build(): linking stdcpp statically on platform {}".format(platform.platform()))
                     static_link_stdcpp = True
 
@@ -512,28 +509,28 @@ class TensorFlowConan(ConanFile):
             self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
 
             bazel_bin_directory = self._find_directory_under_directory(self._source_subfolder, "bazel-bin")[0]
-            print("Absolute path of BAZEL-BIN directory: %s" % os.path.abspath(bazel_bin_directory))
+            print("Absolute path of BAZEL-BIN directory: {}".formatos.path.abspath(bazel_bin_directory))
 
             source_folder_path = os.path.realpath(self._source_subfolder)
-            print("Absolute path of source_subfolder directory: %s" % (source_folder_path))
+            print("Absolute path of source_subfolder directory: {}".format(source_folder_path))
 
             inc_dir = os.path.realpath(os.path.join(self.package_folder, "include"))
             if not os.path.exists(inc_dir):
-                print("Library directory %s does not exist, creating" % (inc_dir))
+                print("Library directory {} does not exist, creating".format(inc_dir))
                 os.makedirs(inc_dir)
-            print("Real path of include directory: %s" % (inc_dir))
+            print("Real path of include directory: {}".format(inc_dir))
 
             # Copy the various TF Libs to their respective destiations
             lib_dir = os.path.abspath(os.path.join(self.package_folder, "lib"))
             if not os.path.exists(lib_dir):
-                print("Library directory %s does not exist, creating" % (lib_dir))
+                print("Library directory {} does not exist, creating".format(lib_dir))
                 os.makedirs(lib_dir)
-            print("Real path of lib directory: %s" % (lib_dir))
+            print("Real path of lib directory: {}".format(lib_dir))
 
             self._copy_tf_libs(
                 src_dir=os.path.abspath(os.path.join(bazel_bin_directory, "tensorflow")),
                 dest_dir=lib_dir,
-                search_patterns=["*.so", "*.dylib", "*.params"],
+                search_patterns=["*.so", "*.dylib"],
             )
 
             os_name = str(self.settings.os).lower()
@@ -591,7 +588,7 @@ class TensorFlowConan(ConanFile):
             # Fix up pkgconfig file: this takes the tensorflow.pc.in file and generates tensorflow.pc
             pkg_config_dir = os.path.join(lib_dir, "pkgconfig")
             if not os.path.exists(pkg_config_dir):
-                print("Pkgconfir directory %s does not exist, creating" % (pkg_config_dir))
+                print("Pkgconfir directory {} does not exist, creating".format(pkg_config_dir))
                 os.makedirs(pkg_config_dir)
 
             pkg_config_file = os.path.join(pkg_config_dir, "tensorflow.pc")

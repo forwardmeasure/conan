@@ -7,7 +7,8 @@ import argparse
 import requests
 import subprocess
 
-_cudnn_version_archive_map = {"7.6": "cudnn-10.2-linux-x64-v7.6.5.32.tgz"}
+_cudnn_sem_ver_version_map = {"7.6": "7.6.5"}
+_cudnn_version_archive_map = {"7.6.5": "cudnn-10.2-linux-x64-v7.6.5.32.tgz"}
 
 
 def configure_cudnn_installer_arguments(arg_parser=None):
@@ -75,9 +76,9 @@ def install_cudnn(build_dir, archive_name, install_dir):
 
 
 def download_and_install_cudnn(version, build_dir, install_dir):
-    logging.info("Installing cudnn version %s in directory %s" % (version, build_dir))
+    logging.info("Installing cudnn version {} in directory {}".format(_cudnn_sem_ver_version_map[version], build_dir))
 
-    (installer, download_url) = get_cudnn_download_location(version)
+    (installer, download_url) = get_cudnn_download_location(_cudnn_sem_ver_version_map[version])
 
     os.makedirs(install_dir, mode=0o755, exist_ok=True)
     os.makedirs(build_dir, mode=0o755, exist_ok=True)

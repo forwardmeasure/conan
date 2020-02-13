@@ -15,7 +15,7 @@ ENV CONAN_USER_HOME=/opt/conan \
     SW_DOWNLOADS_DIR=/opt/software/downloads \
     CMAKE_SCRIPT=install_cmake.py \
     BAZEL_SCRIPT=install_bazel.py \
-    CUDA_SCRIPT=install_cuda.py \
+    CUDA_TOOLKIT_SCRIPT=install_cuda_toolkit.py \
     CUDNN_SCRIPT=install_cudnn.py \
     NCCL_SCRIPT=install_nccl.py \
     COMPUTE_ENGINE_TYPE=$compute_engine_type \
@@ -43,7 +43,7 @@ RUN dnf update -y; dnf clean all; dnf -y upgrade && \
 RUN mkdir -p ${SW_DOWNLOADS_DIR} ${CUDA_HOME} ${CUDNN_HOME}
 
 # Download CMake and Bazel installers
-COPY ${CMAKE_SCRIPT} ${BAZEL_SCRIPT} ${CUDA_SCRIPT} ${CUDNN_SCRIPT} ${SW_DOWNLOADS_DIR}/
+COPY ${CMAKE_SCRIPT} ${BAZEL_SCRIPT} ${CUDA_TOOLKIT_SCRIPT} ${CUDNN_SCRIPT} ${SW_DOWNLOADS_DIR}/
 
 RUN alternatives --set python /usr/bin/python3
 RUN update-alternatives --install /usr/bin/pip pip /usr/bin/pip3 1
@@ -60,7 +60,7 @@ RUN cd ${SW_DOWNLOADS_DIR} && python ./${BAZEL_SCRIPT} --bazel-version=${BAZEL_V
     --bazel-build-dir=${SW_BUILD_DIR}/bazel
 
 # Install CUDA
-RUN cd ${SW_DOWNLOADS_DIR} && python ./${CUDA_SCRIPT} --cuda-version=${CUDA_VERSION} \
+RUN cd ${SW_DOWNLOADS_DIR} && python ./${CUDA_TOOLKIT_SCRIPT} --cuda-version=${CUDA_VERSION} \
     --cuda-install-dir=${CUDA_HOME} \
     --cuda-build-dir=${SW_BUILD_DIR}/cuda
 

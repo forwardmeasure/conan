@@ -1,23 +1,19 @@
 import os
 import subprocess
 import platform
-import re
 import shutil
 import sys
-import contextlib
 from pathlib import Path
 import fnmatch
 import functools
 import itertools
 
 from conans import ConanFile, tools
-from conans.model.version import Version
 
 
 class TensorFlowConan(ConanFile):
     name = "tensorflow"
     version = "2.1.0"
-    folder_name = name + ("_{}".formatversion.replace(".", "_"))
     homepage = "https://github.com/tensorflow/tensorflow"
     topics = ("conan", "tensorflow", "Machine Learning", "Neural Networks")
     url = "https://github.com/forwardmeasuyre/conan"
@@ -198,7 +194,7 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     def _find_file(self, src_dir: str, file_name: str) -> str:
         print("_find_file(): looking for file {} under {}".format(file_name, src_dir))
-        for root, dirs, files in os.walk(src_dir):
+        for root, _, files in os.walk(src_dir):
             if file_name in files:
                 found_file = os.path.join(root, file_name)
                 print("_find_file(): found file, returning {}".format(found_file))
@@ -235,8 +231,9 @@ class TensorFlowConan(ConanFile):
                 search_patterns = ["*.so", "*.dylib"]
 
             print(
-                "_copy_tf_libs(): copying file matching patterns {} from {} to {}"
-               .format(str(search_patterns), src_dir, dest_dir)
+                "_copy_tf_libs(): copying file matching patterns {} from {} to {}".format(
+                    str(search_patterns), src_dir, dest_dir
+                )
             )
 
             for f in self._find_files(src_dir=src_dir, search_patterns=search_patterns):
@@ -509,7 +506,7 @@ class TensorFlowConan(ConanFile):
             self.copy(pattern="LICENSE", dst="licenses", src=self._source_subfolder)
 
             bazel_bin_directory = self._find_directory_under_directory(self._source_subfolder, "bazel-bin")[0]
-            print("Absolute path of BAZEL-BIN directory: {}".formatos.path.abspath(bazel_bin_directory))
+            print("Absolute path of BAZEL-BIN directory: {}".format(os.path.abspath(bazel_bin_directory)))
 
             source_folder_path = os.path.realpath(self._source_subfolder)
             print("Absolute path of source_subfolder directory: {}".format(source_folder_path))

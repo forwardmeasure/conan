@@ -150,15 +150,7 @@ class LibtorchConan(ConanFile):
             self.build_requires("gtest/1.8.1@bincrafters/stable")
 
     def _configure_cmake(self):
-        # Pach caffe2/CMakeLists.txt to correctly reference aten library
-        # self._patch()
-
         env_build = dict()
-        # Not sure why the build breaks becasue of missing defs for CAFFE2_PERF_WITH_AVX, etc. so just adding these for now
-        #       env_build["CAFFE2_PERF_WITH_AVX"] = "ON"
-        #       env_build["CAFFE2_PERF_WITH_AVX2"] = "ON"
-        #       env_build["CAFFE2_PERF_WITH_AVX512"] = "ON"
-
         with tools.environment_append(env_build):
             cmake = (
                 CMake(self, generator="Ninja", set_cmake_flags=True, parallel=self.options.enable_parallel_build)
@@ -169,11 +161,6 @@ class LibtorchConan(ConanFile):
             )
 
             cmake.verbose = True
-
-            # Not sure why the build breaks becasue of missing defs for CAFFE2_PERF_WITH_AVX, etc. so just adding these for now
-            #           cmake.definitions["CAFFE2_PERF_WITH_AVX"] = "ON"
-            #           cmake.definitions["CAFFE2_PERF_WITH_AVX2"] = "ON"
-            #           cmake.definitions["CAFFE2_PERF_WITH_AVX512"] = "ON"
 
             cmake.definitions["BUILD_SHARED_LIBS"] = "ON" if self.options.shared else "OFF"
             cmake.definitions["ATEN_NO_TEST"] = "ON" if self.options.aten_no_test else "OFF"

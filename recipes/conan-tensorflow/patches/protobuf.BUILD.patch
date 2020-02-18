@@ -1,5 +1,5 @@
 diff --git a/third_party/systemlibs/protobuf.BUILD b/third_party/systemlibs/protobuf.BUILD
-index 89a3f8c3fa..a63af29bf0 100644
+index 89a3f8c3fa..d08e43574b 100644
 --- a/third_party/systemlibs/protobuf.BUILD
 +++ b/third_party/systemlibs/protobuf.BUILD
 @@ -12,10 +12,12 @@ filegroup(
@@ -28,7 +28,7 @@ index 89a3f8c3fa..a63af29bf0 100644
      "google/protobuf/repeated_field.h",
      "google/protobuf/text_format.h",
      "google/protobuf/timestamp.pb.h",
-@@ -40,37 +45,93 @@ HEADERS = [
+@@ -40,51 +45,107 @@ HEADERS = [
      "google/protobuf/util/type_resolver_util.h",
      "google/protobuf/wrappers.pb.h",
      "google/protobuf/wrappers.proto",
@@ -129,7 +129,14 @@ index 89a3f8c3fa..a63af29bf0 100644
      visibility = ["//visibility:public"],
  )
  
-@@ -84,7 +145,7 @@ genrule(
+ genrule(
+     name = "protoc",
+     outs = ["protoc.bin"],
+-    cmd = "ln -s $$(which protoc) $@",
++    cmd = "ln -s $(com_google_protobuf_PREFIX)/bin/protoc $@",
+     executable = 1,
+     visibility = ["//visibility:public"],
+ )
  
  cc_proto_library(
      name = "cc_wkt_protos",

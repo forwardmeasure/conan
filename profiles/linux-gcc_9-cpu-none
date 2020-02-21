@@ -1,0 +1,9 @@
+include(gcc_9)
+include(linux-gcc_9-cpu)
+
+[settings]
+[options]
+    tensorflow:build_optimized=none
+
+[build_requires]
+[env]

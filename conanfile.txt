@@ -60,10 +60,6 @@
     openblas:USE_THREAD=False
     openblas:USE_LOCKING=True
 
-	tensorflow:build_optimized=True
-	tensorflow:need_cuda=False
-	tensorflow:need_mkl=True
-
     libtorch:enable_parallel_build=True
     libtorch:use_tbb=False
     libtorch:use_distributed=True

@@ -1,0 +1,8 @@
+include(darwin-apple_clang-cpu)
+
+[settings]
+[options]
+    tensorflow:build_optimized=all
+
+[build_requires]
+[env]

@@ -1,0 +1,9 @@
+include(darwin)
+include(apple_clang)
+
+[settings]
+[options]
+    tensorflow:need_cuda=False
+    tensorflow:need_mkl=True
+[build_requires]
+[env]

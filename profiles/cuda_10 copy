@@ -1,0 +1,15 @@
+CUDA_VERSION=10.2
+CUDA_BASE=/opt/nvidia
+CUDA_HOME=/opt/nvidia/cuda-10.2
+
+CUDNN_VERSION=7
+CUDNN_BASE=/opt/nvidia
+CUDNN_HOME=/opt/nvidia/cudnn-7.6
+
+NCCL_VERSION=2.5
+NCCL_BASE=/opt/nvidia
+NCCL_HOME=/opt/nvidia/nccl-2.5
+
+[settings]
+
+[env]

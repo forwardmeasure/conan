@@ -1,0 +1,8 @@
+CC=gcc
+CXX=g++
+GCC_PATH=/usr/bin
+
+[settings]
+	compiler=gcc
+	compiler.version=9
+	compiler.libcxx=libstdc++11

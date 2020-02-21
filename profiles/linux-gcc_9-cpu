@@ -1,0 +1,14 @@
+include(gcc_9)
+
+[settings]
+	os=Linux
+	os_build=Linux
+	arch=x86_64
+	arch_build=x86_64
+	build_type=Release
+[options]
+    tensorflow:need_cuda=False
+	tensorflow:need_mkl=True
+
+[build_requires]
+[env]

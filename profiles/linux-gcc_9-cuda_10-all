@@ -1,0 +1,10 @@
+include(gcc_9)
+include(cuda_10)
+include(linux-gcc_9-cuda_10)
+
+[settings]
+[options]
+    tensorflow:build_optimized=all
+
+[build_requires]
+[env]

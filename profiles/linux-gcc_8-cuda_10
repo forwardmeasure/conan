@@ -1,0 +1,22 @@
+include(gcc_8)
+include(cuda_10)
+
+[settings]
+	os=Linux
+	os_build=Linux
+	arch=x86_64
+	arch_build=x86_64
+	build_type=Release
+[options]
+    tensorflow:need_cuda=True
+	tensorflow:need_mkl=False
+
+[build_requires]
+[env]
+    TF_CUDA_VERSION=$CUDA_VERSION
+    TF_CUBLAS_VERSION=$CUDA_VERSION
+    TF_CUDNN_VERSION=$CUDNN_VERSION
+    TF_NCCL_VERSION=$NCCL_VERSION
+    TF_CUDA_COMPUTE_CAPABILITIES=3.5,3.7,5.2,6.0,6.1,7.0,7.5
+    CUDA_TOOLKIT_PATH=$CUDA_HOME
+    TF_CUDA_PATHS=$CUDA_HOME,$CUDNN_HOME,$NCCL_HOME

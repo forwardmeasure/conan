@@ -1,0 +1,7 @@
+CC=clang
+CXX=clang++
+
+[settings]
+	compiler=apple-clang
+	compiler.version=11.0
+    compiler.libcxx=libc++

@@ -1,0 +1,10 @@
+include(gcc_8)
+include(cuda_10)
+include(linux-gcc_8-cuda_10)
+
+[settings]
+[options]
+    tensorflow:build_optimized=safe
+
+[build_requires]
+[env]

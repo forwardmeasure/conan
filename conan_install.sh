@@ -4,7 +4,7 @@ export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
 . ${SCRIPTS_DIR}/functions.sh
 
-CONAN_CHANNEL=@bottomline/stable
+CONAN_CHANNEL=@forwardmeasure/stable
 BUILD_TYPE=Release
 CONANFILE_TXT=conanfile.txt
 while getopts "o:e:c:f:b:l:" opt; do

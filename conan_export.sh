@@ -4,8 +4,8 @@ export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
 . ${SCRIPTS_DIR}/functions.sh
 
-CONAN_CHANNEL=@bottomline/stable
-LIBS_TO_EXPORT="openssl asio bzip2 cctz abseil boost c-ares gtest poco xtl xtensor xframe onnx protobuf grpc websocketpp cpprestsdk expat apache-apr apache-apr-util apache-log4cxx json4moderncpp xgboost outcome tensorflow"
+CONAN_CHANNEL=@forwardmeasure/stable
+LIBS_TO_EXPORT="openssl json4moderncpp expat abseil protobuf opencv grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome libtorch openblas lapack jemalloc mxnet openexr xgboost fmt poco"
 while getopts "d:l:i:" opt; do
   case ${opt} in
      d)

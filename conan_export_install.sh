@@ -3,12 +3,13 @@ UNAME=$(tr [A-Z] [a-z] <<< "$(uname)")
 export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
 . ${SCRIPTS_DIR}/functions.sh
+. ${SCRIPTS_DIR}/system_capabilities.sh
 
-CONAN_CHANNEL=@bottomline/stable
+CONAN_CHANNEL=@forwardmeasure/stable
 BUILD_TYPE=Release
 CONANFILE_TXT=conanfile.txt
-CONANFILE_TF_TXT=conanfile-tf.txt
-LIBS_TO_EXPORT="openssl asio bzip2 cctz abseil boost c-ares gtest poco xtl xtensor xframe onnx protobuf grpc websocketpp cpprestsdk expat apache-apr apache-apr-util apache-log4cxx json4moderncpp xgboost outcome tensorflow"
+LIBS_TO_EXPORT="openssl json4moderncpp expat abseil protobuf opencv grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome libtorch openblas lapack jemalloc mxnet openexr xgboost boost fmt poco"
+
 while getopts "d:l:i:o:e:c:f:b:l:" opt; do
   case ${opt} in
      o)
@@ -72,9 +73,8 @@ fi
 
 if [ "x$COMPILER" = "x" ]
 then
-	COMPILER=$(get_default_compiler)
+	get_compiler 'COMPILER'
 	echo "Warning: no default compiler specified, defaulting to $COMPILER"
-	COMPILER=gcc_8
 fi
 
 if [ "x$CONAN_FILE_BASE_DIR" = "x" ]
@@ -83,10 +83,17 @@ then
     exit 1
 fi
 
-EXTRA_BUILD_SPEC=$(get_extra_build_spec $COMPILER $COMPUTE_ENGINE $OPTIM_SPEC)
+ENV_SCRIPT_SPEC=""
+compute_env_script_spec 'ENV_SCRIPT_SPEC'
+echo "Determined env script spec to be $ENV_SCRIPT_SPEC"
+
+EXTRA_BUILD_SPEC=$(get_env_spec $COMPILER $COMPUTE_ENGINE $OPTIM_SPEC)
 BUILD_PROFILE=$UNAME-$EXTRA_BUILD_SPEC
 PROFILE_FILE="${SCRIPTS_DIR}/profiles/$BUILD_PROFILE"
 INSTALL_FOLDER=${CONAN_USER_HOME}/CMakeModules/${EXTRA_BUILD_SPEC}
+
+# Ensure that Conan uses the new ABI for the default profile
+conan profile update settings.compiler.libcxx=libstdc++11 default
 
 # Export the requires recipes
 do_conan_export $CONAN_CHANNEL $CONAN_FILE_BASE_DIR "$LIBS_TO_EXPORT"

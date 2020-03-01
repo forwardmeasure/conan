@@ -16,7 +16,7 @@ class TensorFlowConan(ConanFile):
     version = "2.1.0"
     homepage = "https://github.com/tensorflow/tensorflow"
     topics = ("conan", "tensorflow", "Machine Learning", "Neural Networks")
-    url = "https://github.com/forwardmeasuyre/conan"
+    url = "https://github.com/forwardmeasure/conan"
     description = "A Conan recipe to build Tensorflow C++ from code"
     author = "Prashanth Nandavanam <pn@forwardmeasure.com>"
     license = "Apache-2.0"
@@ -28,7 +28,7 @@ class TensorFlowConan(ConanFile):
         "fPIC": [True, False],
         "cuda_clang": [True, False],
         "download_clang": [True, False],
-        "build_optimized": [True, False],
+        "build_optimized": ["all", "safe", "none"],
         "build_monolithic": [True, False],
         "set_android_workspace": [True, False],
         "build_dynamic_kernels": [True, False],
@@ -59,7 +59,7 @@ class TensorFlowConan(ConanFile):
         "fPIC": True,
         "cuda_clang": False,
         "download_clang": False,
-        "build_optimized": True,
+        "build_optimized": "safe",
         "build_monolithic": False,
         "build_dynamic_kernels": False,
         "need_gcp": False,
@@ -288,18 +288,53 @@ class TensorFlowConan(ConanFile):
     ################################################################################################################
     #
     ################################################################################################################
-    def _add_lib_to_env(self, dependency_name: str, tf_lib_name: str, env_build: dict):
-        lib_root_path = self.deps_cpp_info[dependency_name].rootpath
+    def build_id(self):
+        if self.options.build_optimized == "all":
+            self.info_build.options.myoption = "ALL"
+        elif self.options.build_optimized == "safe":
+            self.info_build.options.myoption = "SAFE"
+        else:
+            self.info_build.options.myoption = "NONE"
 
+        self.info_build.options.fullsource = "Always"
+
+    ################################################################################################################
+    #
+    ################################################################################################################
+    def _add_lib_to_env(self, dependency_name: str, tf_lib_name: str, env_build: dict):
         tf_syslibs_env_var = "TF_SYSTEM_LIBS"
         if tf_syslibs_env_var in env_build:
             env_build[tf_syslibs_env_var] += "," + format(tf_lib_name)
         else:
             env_build[tf_syslibs_env_var] = tf_lib_name
 
+        lib_root_path = self.deps_cpp_info[dependency_name].rootpath
+        lib_path = os.path.join(lib_root_path, "lib")
+        bin_path = os.path.join(lib_root_path, "bin")
+        include_path = os.path.join(lib_root_path, "include")
+
         env_build[tf_lib_name + "_PREFIX"] = lib_root_path
-        env_build[tf_lib_name + "_LIBDIR"] = os.path.join(lib_root_path, "lib")
-        env_build[tf_lib_name + "_INCLUDEDIR"] = os.path.join(lib_root_path, "include")
+        env_build[tf_lib_name + "_LIBDIR"] = lib_path
+        env_build[tf_lib_name + "_INCLUDEDIR"] = include_path
+
+        if "LD_LIBRARY_PATH" in env_build:
+            env_build["LD_LIBRARY_PATH"] += (":" + lib_path)
+        else:
+            env_build["LD_LIBRARY_PATH"] = lib_path
+
+        if "DYLD_LIBRARY_PATH" in env_build:
+            env_build["DYLD_LIBRARY_PATH"] += (":" + lib_path)
+        else:
+            env_build["DYLD_LIBRARY_PATH"] = lib_path
+
+
+#       if os.path.isdir(bin_path):
+#           env_build["PATH"] += (":" + bin_path)
+
+#        if "PATH" in env_build:
+#               env_build["PATH"] += (":" + bin_path)
+#        else:
+#               env_build["PATH"] = bin_path
 
     ################################################################################################################
     # We need to patch a few files until they are merged into the TF baseline
@@ -449,7 +484,10 @@ class TensorFlowConan(ConanFile):
                     optim_flags = "-c opt --copt=-mavx --copt=-mavx2 --copt=-mfma --copt=-mfpmath=both --copt=-msse4.1 --copt=-msse4.2"
                     safe_flags = "-c opt --copt=-march=native --copt=-mfpmath=both"
 
-                bazel_config_flags += optim_flags if self.options.build_optimized else safe_flags
+                if self.options.build_optimized == "all":
+                    bazel_config_flags += optim_flags
+                elif self.options.build_optimized == "safe":
+                    bazel_config_flags += safe_flags
 
                 # This is a shite, ugly hack. Linking with devtoolset on Bazel is jacked: we need to link stdc++ statically
                 # https://github.com/bazelbuild/bazel/issues/10327

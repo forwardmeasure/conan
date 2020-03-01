@@ -4,7 +4,7 @@ export CONAN_USER_HOME=${CONAN_USER_HOME:-/opt/bt/conan}
 export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
 BUILD_TYPE=${BUILD_TYPE:-Release}
-CHANNEL=${CHANNEL:-"bottomline/stable"}
+CHANNEL=${CHANNEL:-"forwardmeasure/stable"}
 INSTALL_DIR=${INSTALL_DIR:-${SCRIPTS_DIR}/CMakeModules}
 
 while getopts ":b:c:p:i:" opt; do

@@ -83,5 +83,7 @@ ENV NVIDIA_VISIBLE_DEVICES all
 ENV NVIDIA_DRIVER_CAPABILITIES compute,utility
 ENV NVIDIA_REQUIRE_CUDA "cuda>=10.2 brand=tesla,driver>=384,driver<385 brand=tesla,driver>=396,driver<397 brand=tesla,driver>=410,driver<411 brand=tesla,driver>=418,driver<419"
 
-#COPY conan ${CONAN_BUILD_DIR}
-#RUN ${CONAN_BUILD_DIR}/conan_export_install.sh -e ${COMPUTE_ENGINE_TYPE}
+RUN echo "{CUDA_HOME}/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+COPY conan ${CONAN_BUILD_DIR}
+RUN ${CONAN_BUILD_DIR}/conan_export_install.sh -e cpu -c gcc_9 -o all -d${CONAN_BUILD_DIR}/recipes -f${CONAN_BUILD_DIR}/conanfile.txt

@@ -1,9 +1,5 @@
 [requires]
 	json4moderncpp/3.7.3@forwardmeasure/stable
-#expat/2.2.6@forwardmeasure/stable
-#apache-apr/1.7.0@forwardmeasure/stable
-#apache-apr-util/1.6.1@forwardmeasure/stable
-#apache-log4cxx/master@forwardmeasure/stable
 	abseil/20190808@forwardmeasure/stable
 	asio/1.13.0@bincrafters/stable
 	bzip2/1.0.8@conan/stable
@@ -24,7 +20,6 @@
 	outcome/2.1.2@forwardmeasure/stable
 	protobuf/3.8.0@forwardmeasure/stable
 	grpc/1.26.0@forwardmeasure/stable
-	tensorflow/2.1.0@forwardmeasure/stable
 	ONNX/1.6.0@forwardmeasure/stable
 	Poco/1.10.1@forwardmeasure/stable
     libtorch/1.4.1@forwardmeasure/stable
@@ -35,6 +30,7 @@
     jemalloc/5.2.1@forwardmeasure/stable
     mxnet/1.5.1@forwardmeasure/stable
     xgboost/1.0.1@forwardmeasure/stable
+
 [generators]
     cmake
     cmake_multi
@@ -43,6 +39,7 @@
     compiler_args
     gcc
     virtualrunenv
+	json
 
 [options]
 	*:shared=True

@@ -63,7 +63,7 @@ function get_compute_engine_type()
 	then
 		# Run the nvidia-detector utility and test the return code
 		nvidia_found=$(lspci | grep -i nvidia | wc -l)
-		if [[ $? -ne 0 ]]
+		if [[ $? -eq 0 ]]
 		then
 			echo "Found CUDA driver version $nvidia_driver_version"
 

@@ -95,6 +95,9 @@ INSTALL_FOLDER=${CONAN_USER_HOME}/CMakeModules/${EXTRA_BUILD_SPEC}
 # Ensure that Conan uses the new ABI for the default profile
 conan profile update settings.compiler.libcxx=libstdc++11 default
 
+# Ensure that Conan uses the new ABI for the selected profile
+conan profile update settings.compiler.libcxx=libstdc++11 ${BUILD_PROFILE}
+
 # Export the requires recipes
 do_conan_export $CONAN_CHANNEL $CONAN_FILE_BASE_DIR "$LIBS_TO_EXPORT"
 

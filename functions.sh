@@ -1,6 +1,51 @@
 UNAME=$(tr [A-Z] [a-z] <<< "$(uname)")
 export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
+function get_default_compiler()
+{
+	# Detect the platform (similar to $OSTYPE)
+	OS="`uname`"
+	case $OS in
+  	'Linux')
+		echo "gcc"
+    	;;
+  	'FreeBSD')
+		echo "gcc"
+    	;;
+  	'WindowsNT')
+		echo "msvcpp"
+    	;;
+  	'Darwin') 
+		echo "clang"
+    	;;
+  	'SunOS')
+    	echo "gcc"
+    	;;
+  	'AIX') 
+		echo "xlc"
+    	;;
+  	*)
+		echo "UNKNOWN"
+		;;
+	esac
+}
+
+############################################################################
+# Get the build spec 
+#
+# Syntax: get_extra_build_spec <compiler> <compute_engine> <optimization spec>
+# e.g. get_extra_build_spec "gcc" "cpu" "all"
+############################################################################
+function get_extra_build_spec()
+{
+	local compiler=$1
+	local compute_engine=$2
+	local optim_spec=$3
+
+	local build_spec="${compiler}-${compute_engine}-${optim_spec}"
+	echo $build_spec
+}
+
 ############################################################################
 # Remove duplicates and things that don't exist
 #
@@ -24,6 +69,7 @@ function do_conan_export()
 	conan_channel=$1
 	base_dir=$2
 	libs_to_build=$3
+	ret=""
 	
 	myName=$(basename $0)
 	for i in ${libs_to_build}
@@ -42,18 +88,21 @@ function do_conan_export()
 			conan export ${dir} ${conan_channel}
 		fi
 	done
+
+	return 0
 }
 
-############################################################################
-# Wraps the git binary in shell script, ensuring that the binary picks up the
-# libraries it was packaged with.
-#
-############################################################################
-git()
-{   
+######################################################################################
+# Wraps the git binary in a shell script that ensures that it uses the shared libraries 
+# it was built with Wraps the git binary in a shell script that ensures that it uses the shared libraries 
+# it was built with.
+######################################################################################
+function git()
+{
 	unset git &> /dev/null 
 	unalias git &> /dev/null
 	unset -f git &> /dev/null
+
 
     gitRealPath=$(command -v git.exe)
     declare -A git_libs
@@ -84,7 +133,7 @@ git()
     cmd="LD_LIBRARY_PATH=${lib_path};DYLD_LIBRARY_PATH=${lib_path} ${gitRealPath} $@"
 	echo "Running git with adjusted LIBRARY paths variables as $cmd"
 	eval ${cmd}
-}
+} 
 
 ######################################################################################
 # Installs a given set of Conan recipes
@@ -134,7 +183,7 @@ function do_conan_install()
 		return 1
 	fi
 
-	extra_build_spec=$(get_env_spec $compiler $compute_engine $optim_spec)
+	extra_build_spec=$(get_extra_build_spec $compiler $compute_engine $optim_spec)
 	install_folder=${CONAN_USER_HOME}/CMakeModules/${extra_build_spec}
 	
 	conan_build_options="--settings build_type=${build_type}"
@@ -143,4 +192,6 @@ function do_conan_install()
 	
 	echo "Installing all conan components using confile ${conanfile_txt}"
 	conan install ${conan_profile_options} ${conan_install_options} ${conanfile_txt}
+
+	return 0
 }

@@ -1,27 +1,27 @@
 [requires]
-	json4moderncpp/3.7.3@forwardmeasure/stable
-	abseil/20190808@forwardmeasure/stable
-	asio/1.13.0@bincrafters/stable
-	bzip2/1.0.8@conan/stable
-	zlib/1.2.11@conan/stable
-	cctz/2.3@bincrafters/stable
-	boost/1.69.0@forwardmeasure/stable
-	c-ares/1.15.0@conan/stable
-	OpenSSL/1.1.1d@forwardmeasure/stable
-	Catch2/2.10.2@catchorg/stable
-	xtl/0.6.11@forwardmeasure/stable
-	xframe/0.2.0@forwardmeasure/stable
-	xtensor/0.21.3@forwardmeasure/stable
-	xtensor-io/0.9.0@forwardmeasure/stable
-	cpprestsdk/2.10.14@forwardmeasure/stable
-	websocketpp/0.8.1@forwardmeasure/stable
-	gtest/1.8.1@bincrafters/stable
-	fmt/6.1.2@forwardmeasure/stable
-	outcome/2.1.2@forwardmeasure/stable
-	protobuf/3.8.0@forwardmeasure/stable
-	grpc/1.26.0@forwardmeasure/stable
-	ONNX/1.6.0@forwardmeasure/stable
-	Poco/1.10.1@forwardmeasure/stable
+    json4moderncpp/3.7.3@forwardmeasure/stable
+    abseil/20190808@forwardmeasure/stable
+    asio/1.13.0@bincrafters/stable
+    bzip2/1.0.8@conan/stable
+    zlib/1.2.11@conan/stable
+    cctz/2.3@bincrafters/stable
+    boost/1.69.0@forwardmeasure/stable
+    c-ares/1.15.0@conan/stable
+    OpenSSL/1.1.1d@forwardmeasure/stable
+    Catch2/2.10.2@catchorg/stable
+    xtl/0.6.11@forwardmeasure/stable
+    xframe/0.2.0@forwardmeasure/stable
+    xtensor/0.21.3@forwardmeasure/stable
+    xtensor-io/0.9.0@forwardmeasure/stable
+    cpprestsdk/2.10.14@forwardmeasure/stable
+    websocketpp/0.8.1@forwardmeasure/stable
+    gtest/1.8.1@bincrafters/stable
+    fmt/6.1.2@forwardmeasure/stable
+    outcome/2.1.2@forwardmeasure/stable
+    protobuf/3.8.0@forwardmeasure/stable
+    grpc/1.26.0@forwardmeasure/stable
+    ONNX/1.6.0@forwardmeasure/stable
+    Poco/1.10.1@forwardmeasure/stable
     libtorch/1.4.1@forwardmeasure/stable
     openexr/2.4.0@forwardmeasure/stable
     opencv/4.2.0@forwardmeasure/stable
@@ -30,6 +30,7 @@
     jemalloc/5.2.1@forwardmeasure/stable
     mxnet/1.5.1@forwardmeasure/stable
     xgboost/1.0.1@forwardmeasure/stable
+    tensorflow/2.1.0@forwardmeasure/stable
 
 [generators]
     cmake
@@ -39,18 +40,18 @@
     compiler_args
     gcc
     virtualrunenv
-	json
+    json
 
 [options]
-	*:shared=True
-	*:fPIC=True
+    *:shared=True
+    *:fPIC=True
     libcurl:with_openssl=True
 
- 	mxnet:use_opencv=True
- 	mxnet:use_mkldnn=True
- 	mxnet:use_openmp=True
-	mxnet:use_lapack=True
-	mxnet:use_jemalloc=False
+     mxnet:use_opencv=True
+     mxnet:use_mkldnn=True
+     mxnet:use_openmp=True
+    mxnet:use_lapack=True
+    mxnet:use_jemalloc=False
 
     openblas:BUILD_WITHOUT_LAPACK=False
     openblas:USE_OPENMP=True
@@ -63,4 +64,4 @@
     libtorch:build_custom_protobuf=False
     libtorch:use_cuda=False
 
-	bzip2:shared=True
+    bzip2:shared=True

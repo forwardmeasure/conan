@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 UNAME=$(tr [A-Z] [a-z] <<< "$(uname)")
 export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
@@ -93,9 +93,11 @@ PROFILE_FILE="${SCRIPTS_DIR}/profiles/$BUILD_PROFILE"
 INSTALL_FOLDER=${CONAN_USER_HOME}/CMakeModules/${EXTRA_BUILD_SPEC}
 
 # Ensure that Conan uses the new ABI for the default profile
+echo "Setting defaults for profile 'default'"
 conan profile update settings.compiler.libcxx=libstdc++11 default
 
 # Ensure that Conan uses the new ABI for the selected profile
+echo "Setting defaults for profile '${BUILD_PROFILE}'"
 conan profile update settings.compiler.libcxx=libstdc++11 ${BUILD_PROFILE}
 
 # Export the requires recipes

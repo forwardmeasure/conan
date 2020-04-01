@@ -100,7 +100,7 @@ class TensorFlowConan(ConanFile):
     def build_requirements(self):
         if not tools.which("bazel"):
             self.build_requires("bazel_installer/1.1.0@bincrafters/stable")
-        self.build_requires("OpenSSL/1.1.1d@forwardmeasure/stable")
+        self.build_requires("OpenSSL/1.1.1f@forwardmeasure/stable")
         self.build_requires("grpc/1.26.0@forwardmeasure/stable")
         self.build_requires("protobuf/3.8.0@forwardmeasure/stable")
 

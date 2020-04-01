@@ -43,7 +43,7 @@ class CppRestSDKConan(ConanFile):
     zlib_reference = "zlib/1.2.11@forwardmeasure/stable"
     boost_reference = "boost/1.69.0@forwardmeasure/stable"
     asio_reference = "asio/1.13.0@forwardmeasure/stable"
-    openssl_reference = "OpenSSL/1.1.1d@forwardmeasure/stable"
+    openssl_reference = "OpenSSL/1.1.1f@forwardmeasure/stable"
     websocketpp_reference = "websocketpp/0.8.1@forwardmeasure/stable"
 
     _source_subfolder = "source_subfolder"

@@ -1,4 +1,4 @@
-#!/bin/bash -x
+#!/bin/bash
 UNAME=$(tr [A-Z] [a-z] <<< "$(uname)")
 export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 

@@ -138,6 +138,9 @@ class LibtorchConan(ConanFile):
             "git clone {}.git {} && cd {} && " "git checkout v{} && git submodule update --init --recursive"
         ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
+        if not self.options.build_custom_protobuf:
+            cleanup_command = "rm -rf {}/thirdparty/protobuf".format(self._source_subfolder)
+            self.run(cleanup_command)
 
     def build_requirements(self):
         if not self.options.build_custom_protobuf:

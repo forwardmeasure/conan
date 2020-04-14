@@ -16,7 +16,7 @@ function get_default_compiler()
 		echo "msvcpp"
     	;;
   	'Darwin') 
-		echo "clang"
+		echo "apple_clang"
     	;;
   	'SunOS')
     	echo "gcc"
@@ -49,9 +49,9 @@ function get_extra_build_spec()
 ############################################################################
 # Remove duplicates and things that don't exist
 #
-# Syntax: cleanupPath PATHNAME
+# Syntax: cleanup_path PATHNAME
 ############################################################################
-cleanupPath()
+cleanup_path()
 {
     pathName=$1
     eval pathContents=\"\$$pathName\"
@@ -150,7 +150,7 @@ function do_conan_install()
 	compute_engine=$5
 	optim_spec=$6
 	profile_file=$7
-	install_folder=$7
+	install_folder=$8
 	
 	if ! [[ "$optim_spec" =~ ^(all|safe|none)$ ]]
 	then
@@ -188,10 +188,10 @@ function do_conan_install()
 	
 	conan_build_options="--settings build_type=${build_type}"
 	conan_profile_options="--profile=${profile_file}"
-	conan_install_options="--install-folder=${install_folder} ${conan_build_options} ${conan_build_cpp_options} --build outdated"
+	conan_install_options="--install-folder=${install_folder}"
 	
 	echo "Installing all conan components using confile ${conanfile_txt}"
-	conan install ${conan_profile_options} ${conan_install_options} ${conanfile_txt}
+	conan install ${conan_profile_options} ${conan_install_options} ${conan_build_options} ${conan_build_cpp_options} --build outdated ${conanfile_txt}
 
 	return 0
 }

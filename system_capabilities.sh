@@ -59,21 +59,19 @@ function get_compute_engine_type()
     local engine_type=$1
 	engine_type="cpu"
 
-	if [[ ! -z ${CUDA_HOME+x} && -f $CUDA_HOME/lib64/libcudart.so ]]
+	# Run lspci and see if we have any NVIDIA drivers loaded
+	declare -i nvidia_found=$(lspci | grep -i nvidia | wc -l)
+	
+	# We should have at least one line from lspci if we ahave NVIDIA installed
+	if [[ $nvidia_found -gt 0 ]]
 	then
-		# Run the nvidia-detector utility and test the return code
-		nvidia_found=$(lspci | grep -i nvidia | wc -l)
-		if [[ $? -eq 0 ]]
+		if [[ ! -z ${CUDA_HOME+x} && -f $CUDA_HOME/lib64/libcudart.so ]]
 		then
-			echo "Found CUDA driver version $nvidia_driver_version"
-
 			cuda_version=$(cat ${CUDA_HOME}/version.txt | cut -d' ' -f3)
-			if [[ $? -eq 0 ]]
-			then
-				echo "Determined CUDA version to be $cuda_version"
-				cuda_major_ver=$(echo $cuda_version | awk -F '.' '{print $1}')
-				engine_type="cuda_${cuda_major_ver}"
-			fi
+			echo "Determined CUDA version to be $cuda_version"
+			
+			cuda_major_ver=$(echo $cuda_version | awk -F '.' '{print $1}')
+			engine_type="cuda_${cuda_major_ver}"
 		fi
 	fi
 
@@ -293,6 +291,10 @@ function set_env_script()
 	then
 		return 0
 	fi
+
+	echo "Unable to determine which environemnt to use!!!"
+	echo -e "CONAN_USER_HOME = ${CONAN_USER_HOME}:\n" && ls -la ${CONAN_USER_HOME}
+	echo -e "CONAN_SCRIPT_HOME = ${CONAN_SCRIPT_HOME}:\n" && ls -la ${CONAN_SCRIPT_HOME}
 
 	return 1
 }

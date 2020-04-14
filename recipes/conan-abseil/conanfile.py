@@ -33,7 +33,7 @@ class AbseilConan(ConanFile):
 
     def configure(self):
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio" and Version(self.settings.compiler.version.value) < "14":
-           raise ConanInvalidConfiguration("Abseil does not support MSVC < 14")
+            raise ConanInvalidConfiguration("Abseil does not support MSVC < 14")
 
     def build(self):
         cmake = CMake(self)

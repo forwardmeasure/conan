@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.12)
 project(cmake_wrapper)
 
 include("conanbuildinfo.cmake")
-conan_basic_setup(TARGETS)
+conan_basic_setup(TARGETS, KEEP_RPATHS)
 
 if(MSVC)
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /wd4309")

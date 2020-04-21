@@ -193,5 +193,7 @@ function do_conan_install()
 	echo "Installing all conan components using confile ${conanfile_txt}"
 	conan install ${conan_profile_options} ${conan_install_options} ${conan_build_options} ${conan_build_cpp_options} --build outdated ${conanfile_txt}
 
-	return 0
+	ret=$?
+	echo "Conan install returned ${ret}"
+	return ${ret}
 }

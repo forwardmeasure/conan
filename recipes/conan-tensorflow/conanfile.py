@@ -88,7 +88,7 @@ class TensorFlowConan(ConanFile):
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
     _bazel_cache_dir = os.path.join(os.environ["CONAN_USER_HOME"], "BAZEL_CACHE")
-    _grpc_version = "1.26.0"
+    _grpc_version = "1.28.1"
     _protobuf_version = "3.8.0"
 
     short_paths = True
@@ -101,7 +101,7 @@ class TensorFlowConan(ConanFile):
         if not tools.which("bazel"):
             self.build_requires("bazel_installer/1.1.0@bincrafters/stable")
         self.build_requires("OpenSSL/1.1.1f@forwardmeasure/stable")
-        self.build_requires("grpc/1.26.0@forwardmeasure/stable")
+        self.build_requires("grpc/1.28.1@forwardmeasure/stable")
         self.build_requires("protobuf/3.8.0@forwardmeasure/stable")
 
     ################################################################################################################
@@ -318,23 +318,22 @@ class TensorFlowConan(ConanFile):
         env_build[tf_lib_name + "_INCLUDEDIR"] = include_path
 
         if "LD_LIBRARY_PATH" in env_build:
-            env_build["LD_LIBRARY_PATH"] += (":" + lib_path)
+            env_build["LD_LIBRARY_PATH"] += ":" + lib_path
         else:
             env_build["LD_LIBRARY_PATH"] = lib_path
 
         if "DYLD_LIBRARY_PATH" in env_build:
-            env_build["DYLD_LIBRARY_PATH"] += (":" + lib_path)
+            env_build["DYLD_LIBRARY_PATH"] += ":" + lib_path
         else:
             env_build["DYLD_LIBRARY_PATH"] = lib_path
 
+    #       if os.path.isdir(bin_path):
+    #           env_build["PATH"] += (":" + bin_path)
 
-#       if os.path.isdir(bin_path):
-#           env_build["PATH"] += (":" + bin_path)
-
-#        if "PATH" in env_build:
-#               env_build["PATH"] += (":" + bin_path)
-#        else:
-#               env_build["PATH"] = bin_path
+    #        if "PATH" in env_build:
+    #               env_build["PATH"] += (":" + bin_path)
+    #        else:
+    #               env_build["PATH"] = bin_path
 
     ################################################################################################################
     # We need to patch a few files until they are merged into the TF baseline
@@ -367,7 +366,8 @@ class TensorFlowConan(ConanFile):
             tools.patch(patch_file=patch_file)
 
             # Grpc
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "grpc.BUILD.patch"))
+            grpc_patch_file_name = "grpc.{}.BUILD.patch".format(self.deps_cpp_info["grpc"].version)
+            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", grpc_patch_file_name))
             print("Applying patch {}".format(patch_file))
             tools.patch(patch_file=patch_file)
 

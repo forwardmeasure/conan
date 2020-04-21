@@ -55,9 +55,10 @@ then
 	ARGS="${ARGS} -i ${LIBS_TO_EXPORT}"
 fi
 
-. ${SCRIPTS_DIR}/conan_export.sh ${ARGS}
+${SCRIPTS_DIR}/conan_export.sh ${ARGS}
+ret=$?
 
-if [[ $? -eq "0" ]]
+if [[ ${ret} -eq "0" ]]
 then
 	ARGS=""
 
@@ -91,7 +92,8 @@ then
 		ARGS="${ARGS} -f ${CONANFILE_TXT}"
 	fi
 	
-	. ${SCRIPTS_DIR}/conan_install.sh ${ARGS}
+	${SCRIPTS_DIR}/conan_install.sh ${ARGS}
+	ret=$?
 fi
 
-exit $?
+exit ${ret}

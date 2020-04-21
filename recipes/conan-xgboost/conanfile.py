@@ -5,7 +5,7 @@ import glob
 
 class XGBoostConan(ConanFile):
     name = "xgboost"
-    version = "1.0.1"
+    version = "1.0.2"
     description = (
         "A scalable, Portable and Distributed Gradient Boosting (GBDT, GBRT or GBM)"
         "Library, for Python, R, Java, Scala, C++ and more"

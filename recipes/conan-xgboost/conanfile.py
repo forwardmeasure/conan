@@ -12,8 +12,8 @@ class XGBoostConan(ConanFile):
     )
     topics = {"XGBoost", "extreme gradient boosting", "GBDT", "GBRT", "GBM"}
     license = "BSD-3-Clause"
-    url = "https://github.com/dmlc/xgboost"
-    homepage = "https://github.com/forwardmeasure/conan"
+    homepage = "https://github.com/dmlc/xgboost"
+    url = "https://github.com/forwardmeasure/conan"
     settings = "os", "compiler", "build_type", "arch"
     options = {
         "shared": [True, False],
@@ -56,12 +56,20 @@ class XGBoostConan(ConanFile):
     def requirements(self):
         self.requires.add("zlib/1.2.11@conan/stable")
 
+    ################################################################################################################
+    #
+    ################################################################################################################
     def source(self):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
             "git clone {}.git {} && cd {} && " "git checkout v{} && git submodule update --init --recursive"
-        ).format(self.url, self._source_subfolder, self._source_subfolder, self.version)
+        ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
+
+    def source_new(self):
+        tools.get("{0}/archive/v{1}.zip".format(self.homepage, self.version))
+        extracted_dir = self.name + "-" + self.version
+        os.rename(extracted_dir, self._source_subfolder)
 
     def _build_cmake(self):
         env_build = RunEnvironment(self)

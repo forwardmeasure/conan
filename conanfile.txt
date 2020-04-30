@@ -22,7 +22,7 @@
     grpc/1.28.1@forwardmeasure/stable
     ONNX/1.6.0@forwardmeasure/stable
     Poco/1.10.1@forwardmeasure/stable
-    libtorch/1.4.1@forwardmeasure/stable
+    libtorch/1.5.0@forwardmeasure/stable
     openexr/2.4.0@forwardmeasure/stable
     opencv/4.2.0@forwardmeasure/stable
     openblas/0.3.7@forwardmeasure/stable

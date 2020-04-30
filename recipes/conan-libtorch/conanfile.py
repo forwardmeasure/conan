@@ -5,7 +5,7 @@ import os
 
 class LibtorchConan(ConanFile):
     name = "libtorch"
-    version = "1.4.1"
+    version = "1.5.0"
     homepage = "https://github.com/pytorch/pytorch"
     url = "https://github.com/forwardmeasure/conan"
     topics = ("conan", "ONNX", "neural networks")

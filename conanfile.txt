@@ -1,6 +1,5 @@
 [requires]
     json4moderncpp/3.7.3@forwardmeasure/stable
-    absl/20200225.1@forwardmeasure/stable
     asio/1.16.0@forwardmeasure/stable
     bzip2/1.0.8@conan/stable
     zlib/1.2.11@conan/stable
@@ -41,16 +40,16 @@
     gcc
     virtualrunenv
     json
-	cmake_find_package_multi
+    cmake_find_package_multi
 
 [options]
     *:shared=True
     *:fPIC=True
     libcurl:with_openssl=True
 
-     mxnet:use_opencv=True
-     mxnet:use_mkldnn=True
-     mxnet:use_openmp=True
+    mxnet:use_opencv=True
+    mxnet:use_mkldnn=True
+    mxnet:use_openmp=True
     mxnet:use_lapack=True
     mxnet:use_jemalloc=False
 
@@ -66,3 +65,5 @@
     libtorch:use_cuda=False
 
     bzip2:shared=True
+
+    xgboost:USE_CUDA=True

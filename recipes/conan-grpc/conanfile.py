@@ -1,7 +1,6 @@
 from conans import ConanFile, CMake, tools, RunEnvironment
 from conans.errors import ConanInvalidConfiguration
 import os
-from conans.model.version import Version
 
 
 class grpcConan(ConanFile):
@@ -12,10 +11,9 @@ class grpcConan(ConanFile):
     url = "https://github.com/inexorgame/conan-grpc"
     homepage = "https://github.com/grpc/grpc"
     author = "Bincrafters <bincrafters@gmail.com>"
-    _grpc_patch_file_name = "grpc_gettid.patch"
     license = "Apache-2.0"
     exports = ["LICENSE.md"]
-    exports_sources = [_grpc_patch_file_name, "CMakeLists.txt", "Findabsl.cmake"]
+    exports_sources = ["CMakeLists.txt"]
     generators = "cmake"
     short_paths = True  # Otherwise some folders go out of the 260 chars path length scope rapidly (on windows)
 
@@ -40,10 +38,9 @@ class grpcConan(ConanFile):
 
     requires = (
         "zlib/1.2.11@conan/stable",
-        "OpenSSL/1.1.1f@forwardmeasure/stable",
-        "protobuf/3.8.0@forwardmeasure/stable",
-        "c-ares/1.15.0@conan/stable",
-        "absl/20200225.1@forwardmeasure/stable",
+        "OpenSSL/1.1.1f@bottomline/stable",
+        "protobuf/3.8.0@bottomline/stable",
+        "c-ares/1.15.0@bottomline/stable",
     )
 
     def configure(self):
@@ -54,16 +51,19 @@ class grpcConan(ConanFile):
                 raise ConanInvalidConfiguration("gRPC can only be built with Visual Studio 2015 or higher.")
 
     def source(self):
-        archive_url = "https://github.com/grpc/grpc/archive/v{}.zip".format(self.version)
-        tools.get(archive_url, sha256="b0d3b876d85e4e4375aa211a52a33b7e8ca9f9d6d97a60c3c844070a700f0ea3")
-        os.rename("grpc-{!s}".format(self.version), self._source_subfolder)
-
-    def source_new(self):
         # I'm sure there are better/more idiomatic ways to do this, but this will do for now
         git_clone_command = (
             "git clone {}.git {} && cd {} && " "git checkout v{} && git submodule update --init --recursive"
         ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
+
+        cleanup_command = "rm -rf {}/third_party/{{protobuf,cares,zlib*,*ssl*}}".format(self._source_subfolder)
+        self.run(cleanup_command)
+
+    def source_old(self):
+        archive_url = "https://github.com/grpc/grpc/archive/v{}.zip".format(self.version)
+        tools.get(archive_url, sha256="b0d3b876d85e4e4375aa211a52a33b7e8ca9f9d6d97a60c3c844070a700f0ea3")
+        os.rename("grpc-{}".format(self.version), self._source_subfolder)
 
         # cmake_name = "{}/CMakeLists.txt".format(self._source_subfolder)
 
@@ -84,8 +84,8 @@ class grpcConan(ConanFile):
 
     def build_requirements(self):
         if self.options.build_tests:
-            self.build_requires("benchmark/1.4.1@forwardmeasure/stable")
-            self.build_requires("gflags/2.2.1@forwardmeasure/stable")
+            self.build_requires("benchmark/1.4.1@bottomline/stable")
+            self.build_requires("gflags/2.2.1@bottomline/stable")
 
     def _configure_cmake(self):
         cmake = CMake(self)
@@ -101,7 +101,6 @@ class grpcConan(ConanFile):
         # Doesn't work yet for the same reason as above
         #
         # cmake.definitions['CONAN_ENABLE_MOBILE'] = "ON" if self.options.build_csharp_ext else "OFF"
-
         cmake.definitions["gRPC_BUILD_CODEGEN"] = "ON" if self.options.build_codegen else "OFF"
         cmake.definitions["gRPC_BUILD_CSHARP_EXT"] = "ON" if self.options.build_csharp_ext else "OFF"
         cmake.definitions["gRPC_BUILD_TESTS"] = "ON" if self.options.build_tests else "OFF"
@@ -114,7 +113,6 @@ class grpcConan(ConanFile):
         cmake.definitions["gRPC_ZLIB_PROVIDER"] = "package"
         cmake.definitions["gRPC_SSL_PROVIDER"] = "package"
         cmake.definitions["gRPC_PROTOBUF_PROVIDER"] = "package"
-        cmake.definitions["gRPC_ABSL_PROVIDER"] = "package"
 
         # Workaround for https://github.com/grpc/grpc/issues/11068
         if self.options.build_tests:
@@ -127,31 +125,24 @@ class grpcConan(ConanFile):
         cmake.configure(build_folder=self._build_subfolder)
         return cmake
 
-    def build(self):
-        # 	Uncomment line below if using gRPC below version 1.22
-        if self.version < Version("1.22.0"):
-            tools.patch(base_path=self._source_subfolder, patch_file=self._grpc_patch_file_name)
-
-        #        cmake_modules_dir = os.path.join(self.source_folder, self._source_subfolder, "cmake", "modules")
-        #        self.run("cp Findabsl.cmake {}".format(cmake_modules_dir))
-        cmake = self._configure_cmake()
-        cmake.build()
+    #   def build(self):
+    #       env_build = RunEnvironment(self)
+    #       with tools.environment_append(env_build.vars):
+    #           cmake = self._configure_cmake()
+    #           self.run('cmake "%s" %s' % (self.source_folder, cmake.command_line), run_environment=True)
+    #           self.run('cmake --build . %s' % cmake.build_config, run_environment=True)
 
     def package(self):
         env_build = RunEnvironment(self)
         with tools.environment_append(env_build.vars):
             cmake = self._configure_cmake()
-            self.run(
-                'cmake "%s" %s' % (self.source_folder, cmake.command_line), run_environment=True,
-            )
+            self.run('cmake "%s" %s' % (self.source_folder, cmake.command_line), run_environment=True)
             self.run("cmake --build . %s" % cmake.build_config, run_environment=True)
             self.run("cmake --build . --target install", run_environment=True)
 
         self.copy(pattern="LICENSE", dst="licenses")
         self.copy("*", dst="include", src="{}/include".format(self._source_subfolder))
-        self.copy(
-            "*.cmake", dst="lib", src="{}/lib".format(self._build_subfolder), keep_path=True,
-        )
+        self.copy("*.cmake", dst="lib", src="{}/lib".format(self._build_subfolder), keep_path=True)
         self.copy("*.lib", dst="lib", src="", keep_path=False)
         self.copy("*.a", dst="lib", src="", keep_path=False)
         self.copy("*", dst="bin", src="bin")

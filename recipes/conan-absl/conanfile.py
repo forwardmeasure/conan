@@ -8,7 +8,7 @@ import os
 
 class ConanAbseil(ConanFile):
     name = "absl"
-    version = "20200225.1"
+    version = "20200225.2"
     url = "https://github.com/bincrafters/conan-abseil"
     homepage = "https://github.com/abseil/abseil-cpp"
     author = "Bincrafters <bincrafters@gmail.com>"

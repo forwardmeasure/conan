@@ -1,0 +1,42 @@
+diff --git a/configure.py b/configure.py
+index f2c6e0c4dc..a45fdceb4f 100644
+--- a/configure.py
++++ b/configure.py
+@@ -1203,15 +1203,28 @@ def set_system_libs_flag(environ_cp):
+       syslibs = ','.join(sorted(syslibs.split(',')))
+     else:
+       syslibs = ','.join(sorted(syslibs.split()))
+-    write_action_env_to_bazelrc('TF_SYSTEM_LIBS', syslibs)
+-
+-  if 'PREFIX' in environ_cp:
+-    write_to_bazelrc('build --define=PREFIX=%s' % environ_cp['PREFIX'])
+-  if 'LIBDIR' in environ_cp:
+-    write_to_bazelrc('build --define=LIBDIR=%s' % environ_cp['LIBDIR'])
+-  if 'INCLUDEDIR' in environ_cp:
+-    write_to_bazelrc('build --define=INCLUDEDIR=%s' % environ_cp['INCLUDEDIR'])
+-
++    write_action_env_to_bazelrc('TF_SYSTEM_LIBS', syslibs.strip())
++
++  print ("syslibs is {}".format(syslibs))
++  for component in syslibs.split(','):
++    component = component.strip()
++    prefix = component + "_PREFIX"
++    libdir = component + "_LIBDIR"
++    includedir = component + "_INCLUDEDIR"
++
++    print("Setting up component {} as follows: {}, {}, {}".format(component, prefix, libdir, includedir))
++    if prefix in environ_cp:
++      write_to_bazelrc('build --define=%s=%s' % (prefix, environ_cp[prefix]))
++    else:
++        print("WARNING: prefix {} not found in environment".format(prefix))
++    if libdir in environ_cp:
++      write_to_bazelrc('build --define=%s=%s' % (libdir, environ_cp[libdir]))
++    else:
++        print("WARNING: libdir {} not found in environment".format(prefix))
++    if includedir in environ_cp:
++      write_to_bazelrc('build --define=%s=%s' % (includedir, environ_cp[includedir]))
++    else:
++        print("WARNING: includedir {} not found in environment".format(prefix))
+ 
+ def is_reduced_optimize_huge_functions_available(environ_cp):
+   """Check to see if the system supports /d2ReducedOptimizeHugeFunctions.

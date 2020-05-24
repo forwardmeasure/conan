@@ -1,0 +1,86 @@
+diff --git a/third_party/systemlibs/boringssl.BUILD b/third_party/systemlibs/boringssl.BUILD
+index bc4c533403..f341f134b4 100644
+--- a/third_party/systemlibs/boringssl.BUILD
++++ b/third_party/systemlibs/boringssl.BUILD
+@@ -1,5 +1,61 @@
+ licenses(["notice"])
+ 
++BORINGSSL_HEADERS = [
++    "openssl/opensslconf.h",
++    "openssl/ossl_typ.h",
++    "openssl/symhacks.h",
++    "openssl/e_os2.h",
++    "openssl/opensslv.h",
++    "openssl/safestack.h",
++    "openssl/stack.h",
++    "openssl/bio.h",
++    "openssl/bioerr.h",
++    "openssl/hmac.h",
++    "openssl/evp.h",
++    "openssl/evperr.h",
++    "openssl/crypto.h",
++    "openssl/cryptoerr.h",
++    "openssl/objects.h",
++    "openssl/objectserr.h",
++    "openssl/asn1.h",
++    "openssl/asn1err.h",
++    "openssl/obj_mac.h",
++    "openssl/bn.h",
++    "openssl/bnerr.h",
++    "openssl/sha.h",
++    "openssl/pem.h",
++    "openssl/pemerr.h",
++    "openssl/x509.h",
++    "openssl/x509err.h",
++    "openssl/x509_vfy.h",
++    "openssl/ec.h",
++    "openssl/ecerr.h",
++    "openssl/rsa.h",
++    "openssl/rsaerr.h",
++    "openssl/dh.h",
++    "openssl/dherr.h",
++    "openssl/dsa.h",
++    "openssl/dsaerr.h",
++    "openssl/buffer.h",
++    "openssl/buffererr.h",
++    "openssl/lhash.h",
++    "openssl/pkcs7.h",
++    "openssl/pkcs7err.h",
++]
++
++genrule(
++    name = "link_headers",
++    outs = BORINGSSL_HEADERS,
++    cmd = """
++      for i in $(OUTS); do
++        f=$${i#$(@D)/}
++        mkdir -p $(@D)/$${f%/*}
++        echo "LINKING BORINGSSL HEADER file $(boringssl_INCLUDEDIR)/$$f to $(@D)/$$f"
++        ln -sf $(boringssl_INCLUDEDIR)/$$f $(@D)/$$f
++      done
++    """,
++)
++
+ filegroup(
+     name = "LICENSE",
+     visibility = ["//visibility:public"],
+@@ -7,13 +63,17 @@ filegroup(
+ 
+ cc_library(
+     name = "crypto",
+-    linkopts = ["-lcrypto"],
++    includes = ["."],
++    hdrs = BORINGSSL_HEADERS,
++    linkopts = ["-L $(boringssl_LIBDIR) -lcrypto"],
+     visibility = ["//visibility:public"],
+ )
+ 
+ cc_library(
+     name = "ssl",
+-    linkopts = ["-lssl"],
++    includes = ["."],
++    hdrs = BORINGSSL_HEADERS,
++    linkopts = ["-L $(boringssl_LIBDIR) -lssl"],
+     visibility = ["//visibility:public"],
+     deps = [
+         ":crypto",

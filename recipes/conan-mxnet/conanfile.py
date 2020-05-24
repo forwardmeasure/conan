@@ -4,7 +4,7 @@ import os
 
 class MxnetConan(ConanFile):
     name = "mxnet"
-    version = "1.5.1"
+    version = "1.6.0"
     license = "Apache 2.0"
     homepage = "https://github.com/apache/incubator-mxnet"
     url = "https://github.com/forwardmeasure/conan"
@@ -56,7 +56,7 @@ class MxnetConan(ConanFile):
             self.options["openblas"].BUILD_WITHOUT_LAPACK = True
 
         if self.options.use_opencv:
-            self.requires("opencv/4.2.0@forwardmeasure/stable")
+            self.requires("opencv/4.3.0@forwardmeasure/stable")
             self.options["opencv"].shared = self.options.shared
 
     def source(self):

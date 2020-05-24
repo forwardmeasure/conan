@@ -5,7 +5,7 @@
     zlib/1.2.11@conan/stable
     cctz/2.3@bincrafters/stable
     boost/1.72.0@forwardmeasure/stable
-    c-ares/1.15.0@conan/stable
+    c-ares/1.15.0@forwardmeasure/stable
     OpenSSL/1.1.1f@forwardmeasure/stable
     Catch2/2.10.2@catchorg/stable
     xtl/0.6.13@forwardmeasure/stable
@@ -17,19 +17,19 @@
     gtest/1.8.1@bincrafters/stable
     fmt/6.2.0@forwardmeasure/stable
     outcome/2.1.2@forwardmeasure/stable
-    protobuf/3.8.0@forwardmeasure/stable
-    grpc/1.28.1@forwardmeasure/stable
+    protobuf/3.12.1@forwardmeasure/stable
+    grpc/1.29.1@forwardmeasure/stable
     ONNX/1.6.0@forwardmeasure/stable
     Poco/1.10.1@forwardmeasure/stable
     libtorch/1.5.0@forwardmeasure/stable
     openexr/2.4.0@forwardmeasure/stable
-    opencv/4.2.0@forwardmeasure/stable
+    opencv/4.3.0@forwardmeasure/stable
     openblas/0.3.7@forwardmeasure/stable
     lapack/3.7.1@forwardmeasure/stable
     jemalloc/5.2.1@forwardmeasure/stable
-    mxnet/1.5.1@forwardmeasure/stable
+    mxnet/1.6.0@forwardmeasure/stable
     xgboost/1.0.2@forwardmeasure/stable
-    tensorflow/2.1.0@forwardmeasure/stable
+#   tensorflow/2.2.0@forwardmeasure/stable
 
 [generators]
     cmake
@@ -63,6 +63,7 @@
     libtorch:use_distributed=True
     libtorch:build_custom_protobuf=False
     libtorch:use_cuda=False
+    libtorch:use_opencv=True
 
     bzip2:shared=True
 

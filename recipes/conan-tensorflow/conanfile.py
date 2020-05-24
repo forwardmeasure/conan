@@ -9,11 +9,12 @@ import functools
 import itertools
 
 from conans import ConanFile, tools
+from conans.model.version import Version
 
 
 class TensorFlowConan(ConanFile):
     name = "tensorflow"
-    version = "2.1.0"
+    version = "2.2.0"
     homepage = "https://github.com/tensorflow/tensorflow"
     topics = ("conan", "tensorflow", "Machine Learning", "Neural Networks")
     url = "https://github.com/forwardmeasure/conan"
@@ -88,8 +89,6 @@ class TensorFlowConan(ConanFile):
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
     _bazel_cache_dir = os.path.join(os.environ["CONAN_USER_HOME"], "BAZEL_CACHE")
-    _grpc_version = "1.28.1"
-    _protobuf_version = "3.8.0"
 
     short_paths = True
     exports = ["patches/*"]
@@ -101,8 +100,8 @@ class TensorFlowConan(ConanFile):
         if not tools.which("bazel"):
             self.build_requires("bazel_installer/1.1.0@bincrafters/stable")
         self.build_requires("OpenSSL/1.1.1f@forwardmeasure/stable")
-        self.build_requires("grpc/1.28.1@forwardmeasure/stable")
-        self.build_requires("protobuf/3.8.0@forwardmeasure/stable")
+        self.build_requires("grpc/1.29.1@forwardmeasure/stable")
+        self.build_requires("protobuf/3.12.1@forwardmeasure/stable")
 
     ################################################################################################################
     #
@@ -343,7 +342,9 @@ class TensorFlowConan(ConanFile):
 
         with tools.chdir(source_folder):
             # configure.py
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "configure.py.patch"))
+            patch_file = os.path.realpath(
+                os.path.join(self.build_folder, "patches", self.version, "configure.py.patch".format(self.version))
+            )
             print(
                 "Build folder = {}, source is in {}, patch is {}".format(self.build_folder, source_folder, patch_file)
             )
@@ -351,35 +352,55 @@ class TensorFlowConan(ConanFile):
             tools.patch(patch_file=patch_file)
 
             # Tensorflow
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "tensorflow.BUILD.patch"))
-            print("Applying patch {}".format(patch_file))
-            tools.patch(patch_file=patch_file)
+            if self.version < Version("2.2.0"):
+                patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "tensorflow.BUILD.patch"))
+                print("Applying patch {}".format(patch_file))
+                tools.patch(patch_file=patch_file)
 
             # Boringssl
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "boringssl.BUILD.patch"))
+            patch_file = os.path.realpath(
+                os.path.join(self.build_folder, "patches", self.version, "boringssl.BUILD.patch")
+            )
             print("Applying patch {}".format(patch_file))
             tools.patch(patch_file=patch_file)
 
             # Protobuf
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "protobuf.BUILD.patch"))
+            patch_file = os.path.realpath(
+                os.path.join(
+                    self.build_folder,
+                    "patches",
+                    self.version,
+                    "protobuf.{}.BUILD.patch".format(self.deps_cpp_info["protobuf"].version),
+                )
+            )
             print("Applying patch {}".format(patch_file))
             tools.patch(patch_file=patch_file)
 
             # Grpc
-            grpc_patch_file_name = "grpc.{}.BUILD.patch".format(self.deps_cpp_info["grpc"].version)
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", grpc_patch_file_name))
+            patch_file = os.path.realpath(
+                os.path.join(
+                    self.build_folder,
+                    "patches",
+                    self.version,
+                    "grpc.{}.BUILD.patch".format(self.deps_cpp_info["grpc"].version),
+                )
+            )
             print("Applying patch {}".format(patch_file))
             tools.patch(patch_file=patch_file)
 
             # Aws Crypto
-            patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "aws_crypto.cc.patch"))
+            patch_file = os.path.realpath(
+                os.path.join(self.build_folder, "patches", self.version, "aws_crypto.cc.patch")
+            )
             print("Applying patch {}".format(patch_file))
             tools.patch(patch_file=patch_file)
 
             # Jsoncpp if needed
             patching_jsoncpp = False
             if patching_jsoncpp:
-                patch_file = os.path.realpath(os.path.join(self.build_folder, "patches", "jsoncpp.BUILD.patch"))
+                patch_file = os.path.realpath(
+                    os.path.join(self.build_folder, "patches", self.version, "jsoncpp.BUILD.patch")
+                )
                 print("Applying patch {}".format(patch_file))
                 tools.patch(patch_file=patch_file)
 

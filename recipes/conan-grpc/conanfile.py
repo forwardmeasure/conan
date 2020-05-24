@@ -5,7 +5,7 @@ import os
 
 class grpcConan(ConanFile):
     name = "grpc"
-    version = "1.28.1"
+    version = "1.29.1"
     description = "Google's RPC library and framework."
     topics = ("conan", "grpc", "rpc")
     url = "https://github.com/inexorgame/conan-grpc"
@@ -38,9 +38,9 @@ class grpcConan(ConanFile):
 
     requires = (
         "zlib/1.2.11@conan/stable",
-        "OpenSSL/1.1.1f@bottomline/stable",
-        "protobuf/3.8.0@bottomline/stable",
-        "c-ares/1.15.0@bottomline/stable",
+        "OpenSSL/1.1.1f@forwardmeasure/stable",
+        "protobuf/3.12.1@forwardmeasure/stable",
+        "c-ares/1.15.0@forwardmeasure/stable"
     )
 
     def configure(self):
@@ -57,7 +57,12 @@ class grpcConan(ConanFile):
         ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
 
-        cleanup_command = "rm -rf {}/third_party/{{protobuf,cares,zlib*,*ssl*}}".format(self._source_subfolder)
+        source_folder_path = os.path.dirname(os.path.abspath(self._source_subfolder))
+#        cleanup_command = "rm -rf {}/source_subfolder/third_party/{{protobuf,cares,zlib*,*ssl*}}".format(source_folder_path)
+        cleanup_command = ("rm -rf {}/source_subfolder/third_party/protobuf; "
+                           "rm -rf {}/source_subfolder/third_party/cares; "
+                           "rm -rf {}/source_subfolder/third_party/zlib; "
+                           "rm -rf {}/source_subfolder/third_party/*ssl*; ").format(source_folder_path,source_folder_path,source_folder_path,source_folder_path)
         self.run(cleanup_command)
 
     def source_old(self):
@@ -84,8 +89,8 @@ class grpcConan(ConanFile):
 
     def build_requirements(self):
         if self.options.build_tests:
-            self.build_requires("benchmark/1.4.1@bottomline/stable")
-            self.build_requires("gflags/2.2.1@bottomline/stable")
+            self.build_requires("benchmark/1.4.1@forwardmeasure/stable")
+            self.build_requires("gflags/2.2.1@forwardmeasure/stable")
 
     def _configure_cmake(self):
         cmake = CMake(self)

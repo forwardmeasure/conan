@@ -3,11 +3,15 @@
 export CONAN_USER_HOME=${CONAN_USER_HOME:-/opt/bt/conan}
 export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 
+BUILD_TYPE=${BUILD_TYPE:-Release}
 CHANNEL=${CHANNEL:-"bottomline/stable"}
 INSTALL_DIR=${INSTALL_DIR:-${SCRIPTS_DIR}/CMakeModules}
 
-while getopts ":c:p:i:" opt; do
+while getopts ":b:c:p:i:" opt; do
   case ${opt} in
+    b )
+      BUILD_TYPE=$OPTARG
+      ;;
     c )
       CHANNEL=$OPTARG
       ;;
@@ -27,8 +31,8 @@ while getopts ":c:p:i:" opt; do
 done
 shift $((OPTIND -1))
 
-ARTEFACT="asio/1.13.0"
-CREATE_OPTIONS=
+ARTEFACT="c-ares/1.15.0"
+CREATE_OPTIONS="--options shared=True"
 
 if [[ ${PROFILE+x} ]]
 then
@@ -38,6 +42,9 @@ else
 fi
 
 conan create --test-folder="None" . "${ARTEFACT}@${CHANNEL}" \
-              ${CREATE_OPTIONS}
+             --settings build_type=${BUILD_TYPE} ${CREATE_OPTIONS}
 
-conan install ${CONAN_PROFILE_OPTIONS} ${SCRIPTS_DIR} --install-folder=${INSTALL_DIR} 
+conan install ${CONAN_PROFILE_OPTIONS} ${SCRIPTS_DIR} --install-folder=${INSTALL_DIR} \
+              --generator=cmake --generator=cmake_multi --generator=cmake_paths --generator=pkg_config \
+              --generator=compiler_args --generator=gcc --generator=virtualrunenv \
+              --settings build_type=${BUILD_TYPE} ${CREATE_OPTIONS}

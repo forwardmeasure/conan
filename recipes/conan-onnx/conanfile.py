@@ -47,7 +47,7 @@ class ONNXConan(ConanFile):
     _source_subfolder = "source_subfolder"
     _build_subfolder = "build_subfolder"
 
-    requires = ("protobuf/3.8.0@forwardmeasure/stable",)
+    requires = ("protobuf/3.12.1@forwardmeasure/stable",)
 
     def configure(self):
         if self.settings.os == "Windows" and self.settings.compiler == "Visual Studio":

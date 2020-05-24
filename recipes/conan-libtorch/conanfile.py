@@ -139,12 +139,14 @@ class LibtorchConan(ConanFile):
         ).format(self.homepage, self._source_subfolder, self._source_subfolder, self.version)
         self.run(git_clone_command)
         if not self.options.build_custom_protobuf:
-            cleanup_command = "rm -rf {}/thirdparty/protobuf".format(self._source_subfolder)
+            source_folder_path = os.path.dirname(os.path.abspath(self._source_subfolder))
+            cleanup_command = "rm -rf {}/source_subfolder/third_party/protobuf".format(source_folder_path)
+            print("Running cleanup command {}".format(cleanup_command))
             self.run(cleanup_command)
 
     def build_requirements(self):
         if not self.options.build_custom_protobuf:
-            self.build_requires("protobuf/3.8.0@forwardmeasure/stable")  # Could use the one from bincrafters
+            self.build_requires("protobuf/3.12.1@forwardmeasure/stable")  # Could use the one from bincrafters
         if self.options.use_system_eigen_install:
             self.build_requires("eigen/3.3.7@conan/stable")
         if self.options.build_test:

@@ -5,8 +5,7 @@ export SCRIPTS_DIR="$( cd "$( echo "${BASH_SOURCE[0]%/*}/" )"; pwd )"
 . ${SCRIPTS_DIR}/functions.sh
 
 CONAN_CHANNEL=@forwardmeasure/stable
-LIBS_TO_EXPORT="asio openssl json4moderncpp expat absl protobuf opencv grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome libtorch openblas lapack jemalloc mxnet openexr xgboost boost fmt poco"
-LIBS_TO_EXPORT="grpc"
+LIBS_TO_EXPORT="asio openssl json4moderncpp expat absl protobuf opencv grpc onnx xtl xtensor xtensor-io xframe eigen tensorflow websocketpp cpprestsdk outcome libtorch openblas lapack jemalloc mxnet openexr xgboost boost fmt poco c-ares"
 
 while getopts "d:l:i:" opt; do
   case ${opt} in
